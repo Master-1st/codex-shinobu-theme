@@ -1,10 +1,10 @@
 # Codex Shinobu Theme（Windows）
 
-给 Windows 版 Codex Desktop 使用的小忍主题：柠檬黄、薄荷绿、奶油粉配色，内置根据你指定图片重新构图的竖版忍野忍背景，并支持在设置中换成任意本地 PNG、JPG 或 WebP。角色图铺在主界面底层，对话、回复、审批卡和输入框以半透明玻璃层叠在画面上方。
+给 Windows 版 Codex Desktop 使用的小忍主题：柠檬黄、薄荷绿、奶油粉配色，内置右侧人物安全区的 16:9 横版忍野忍背景，并支持在设置中换成任意本地 PNG、JPG 或 WebP。角色图铺在主界面底层，对话、回复、审批卡和输入框以半透明玻璃层叠在画面上方。
 
 ![Codex Shinobu Theme preview](assets/preview.png)
 
-背景配色、聊天区与角色画廊的布局逻辑见 [主题配色与背景设计](docs/THEME-DESIGN.md)。仓库还附带独立的 [Codex Windows 优化器](docs/CODEX-WINDOWS-OPTIMIZER.md)，用于安全轮换过大的诊断日志并清理可再生缓存。
+背景与人物安全区逻辑见 [主题配色与背景设计](docs/THEME-DESIGN.md)，换图后的取色规则见 [自动生成主题配色](docs/AUTO-PALETTE.md)，实测窗口与弹层矩阵见 [视觉与功能验收](docs/VISUAL-QA.md)。仓库还附带独立的 [Codex Windows 优化器](docs/CODEX-WINDOWS-OPTIMIZER.md)，用于安全轮换过大的诊断日志并清理可再生缓存。
 
 > 非官方同人项目，与 OpenAI、《物语》系列及其权利方无关联。代码使用 MIT License；角色与图片权利不包含在 MIT 授权内，详见 [NOTICE.md](NOTICE.md)。
 
@@ -32,7 +32,7 @@ irm https://raw.githubusercontent.com/b-nnett/codex-plusplus/main/install.ps1 | 
 
 ### 2. 安装小忍主题
 
-1. 从本仓库的 Releases 下载 `codex-shinobu-theme-v1.0.0-windows.zip`。
+1. 从本仓库的 Releases 下载 `codex-shinobu-theme-v1.1.0-windows.zip`。
 2. 完整解压 ZIP。
 3. 双击 `install.cmd`。
 4. 从开始菜单或桌面启动 **Codex++** 快捷方式。
@@ -44,6 +44,8 @@ irm https://raw.githubusercontent.com/b-nnett/codex-plusplus/main/install.ps1 | 
 ```
 
 更新主题时再次运行 `install.cmd` 即可；旧主题代码会自动备份，自定义图片数据不会被覆盖。
+
+安装器还会检查一个当前 Windows Store 版兼容问题：如果 Codex++ 快捷方式错误地指向只负责转交启动的 `Codex.exe`，而同目录存在实际界面程序 `ChatGPT.exe`，会自动修复桌面与开始菜单快捷方式。它不会改动 Microsoft Store 原版快捷方式。
 
 ## Codex 窗口卡顿优化
 
@@ -74,12 +76,13 @@ Optimize-Codex.cmd
 然后点击“选择本地图片”。主题会在本机完成缩放与 WebP 转换，不会上传图片。设置页还可以：
 
 - 开关角色主视觉；
+- 开关“根据图片自动配色”，并预览生成的五个核心颜色；
 - 开关轻微动效；
-- 切换“铺满主界面背景 / 完整显示”；
+- 切换“人物安全区完整显示 / 铺满主界面”；
 - 设置角色靠左、居中或靠右；
 - 一键恢复仓库内置图片。
 
-支持 PNG、JPG、WebP，单张最大 16 MB。建议使用 16:9、人物偏右的 1920×1080 图片。
+支持 PNG、JPG、WebP，单张最大 16 MB。建议使用 16:9、人物位于右侧 40%、左侧有低细节留白的 1920×1080 图片。自动配色会同步更新侧栏、对话、输入框、按钮、菜单、弹窗和编辑器颜色，并对正文做对比度校正。
 
 ## 卸载
 
@@ -113,7 +116,7 @@ npm run package
 - Windows 10/11 x64
 - Microsoft Store Codex Desktop
 - Codex++ 1.0.0 或更新版本
-- 当前选择器基线：Codex Desktop `26.707.9981.0`
+- 当前选择器基线：Codex Desktop `26.707.12708.0`
 
 Codex 的界面结构可能随更新变化。如果主题仍加载但局部没有着色，请提交 issue 并附上 Codex 与 Codex++ 版本。
 

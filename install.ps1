@@ -81,8 +81,41 @@ finally {
   }
 }
 
+$repairedShortcuts = @()
+try {
+  $shortcutPaths = @(
+    (Join-Path $env:USERPROFILE 'Desktop\Codex++.lnk'),
+    (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Codex++.lnk')
+  )
+  $shell = New-Object -ComObject WScript.Shell
+  foreach ($shortcutPath in $shortcutPaths) {
+    if (-not (Test-Path -LiteralPath $shortcutPath)) {
+      continue
+    }
+    $shortcut = $shell.CreateShortcut($shortcutPath)
+    if ([IO.Path]::GetFileName($shortcut.TargetPath) -ine 'Codex.exe') {
+      continue
+    }
+    $actualApp = Join-Path ([IO.Path]::GetDirectoryName($shortcut.TargetPath)) 'ChatGPT.exe'
+    if (-not (Test-Path -LiteralPath $actualApp)) {
+      continue
+    }
+    $shortcut.TargetPath = $actualApp
+    $shortcut.WorkingDirectory = [IO.Path]::GetDirectoryName($actualApp)
+    $shortcut.Description = 'Codex++ with local tweaks'
+    $shortcut.Save()
+    $repairedShortcuts += $shortcutPath
+  }
+}
+catch {
+  Write-Warning "Theme installed, but the Codex++ shortcut check failed: $($_.Exception.Message)"
+}
+
 Write-Host ''
 Write-Host "Installed $($manifest.name) v$($manifest.version)." -ForegroundColor Green
 Write-Host "Path: $destination"
-Write-Host 'Launch the Codex++ shortcut, then open Settings > Tweaks > 小忍主题.'
+if ($repairedShortcuts.Count -gt 0) {
+  Write-Host "Repaired $($repairedShortcuts.Count) Codex++ shortcut(s) to launch ChatGPT.exe." -ForegroundColor Green
+}
+Write-Host 'Launch the Codex++ shortcut, then open Settings > Tweaks > Shinobu Theme.'
 Write-Host 'Your imported original image will be stored separately and preserved across theme updates.'

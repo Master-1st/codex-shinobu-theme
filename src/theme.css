@@ -1,8 +1,8 @@
 /* CODEX_SHINOBU_THEME v1 GALLERY */
 
 @keyframes shinobu-focus-breathe {
-  0%, 100% { box-shadow: 0 12px 30px #66785a26, 0 0 0 1px #79bd985e; }
-  50% { box-shadow: 0 14px 36px #66785a30, 0 0 0 1px #dc82988c, 0 0 24px #dc829824; }
+  0%, 100% { box-shadow: 0 12px 30px #66785a26, 0 0 0 1px color-mix(in srgb, var(--shinobu-mint) 37%, transparent); }
+  50% { box-shadow: 0 14px 36px #66785a30, 0 0 0 1px color-mix(in srgb, var(--shinobu-blush) 55%, transparent), 0 0 24px color-mix(in srgb, var(--shinobu-blush) 14%, transparent); }
 }
 
 html[data-shinobu-theme="active"] {
@@ -15,61 +15,63 @@ html[data-shinobu-theme="active"] {
   --shinobu-cream: #fffdf2;
   --shinobu-ink: #33262c;
   --shinobu-muted: #715f66;
+  --shinobu-strong: #3f7e5d;
+  --shinobu-link: #387654;
   --shinobu-default-art: url("__SHINOBU_HERO_DATA_URI__");
   --shinobu-art-image: var(--shinobu-default-art);
-  --shinobu-art-fit: cover;
-  --shinobu-art-position: center center;
+  --shinobu-art-fit: contain;
+  --shinobu-art-position: center right;
   --corner-radius-scale: 1.45 !important;
-  --startup-background: #f4e96f !important;
-  --startup-logo-shimmer-base: #79bd98 !important;
-  --color-background-surface: #fffdf2f0 !important;
-  --color-background-surface-under: #f4e96f !important;
-  --color-background-editor-opaque: #fffdf2 !important;
-  --color-background-elevated-primary: #fffdf2f5 !important;
-  --color-background-elevated-primary-opaque: #fffdf2 !important;
-  --color-background-elevated-secondary: #e2f3e9f2 !important;
-  --color-background-elevated-secondary-opaque: #e2f3e9 !important;
-  --color-background-control: #fffdf2ed !important;
-  --color-background-control-opaque: #fffdf2 !important;
-  --color-background-panel: #fffdf2ed !important;
-  --color-background-button-primary: #70b78f !important;
-  --color-background-button-primary-hover: #5ea37c !important;
-  --color-background-button-primary-active: #4d8d6a !important;
-  --color-background-button-secondary: #e2f3e9ed !important;
-  --color-background-button-secondary-hover: #cce9d8 !important;
-  --color-background-button-secondary-active: #b8ddc8 !important;
-  --color-background-accent: #79bd982d !important;
-  --color-background-accent-hover: #79bd9842 !important;
-  --color-background-accent-active: #dc82983d !important;
-  --color-text-foreground: #33262c !important;
-  --color-text-foreground-secondary: #66545b !important;
-  --color-text-foreground-tertiary: #88747b !important;
-  --color-text-accent: #3f7e5d !important;
-  --color-text-link: #387654 !important;
-  --color-icon-primary: #3f7e5d !important;
-  --color-icon-secondary: #66545b !important;
-  --color-icon-tertiary: #88747b !important;
-  --color-border: #79bd986b !important;
-  --color-border-light: #fffef2c2 !important;
-  --color-border-heavy: #5eaa7f91 !important;
-  --color-border-focus: #dc8298 !important;
-  --color-token-main-surface-primary: #fffdf2f0 !important;
-  --color-token-side-bar-background: #f5ec82ed !important;
-  --color-token-foreground: #33262c !important;
-  --color-token-input-background: #fffdf2f2 !important;
-  --vscode-editor-background: #fffdf2e8 !important;
-  --vscode-sideBar-background: #f5ec82ed !important;
-  --vscode-input-background: #fffdf2f2 !important;
-  --vscode-input-border: #79bd9885 !important;
-  --vscode-input-placeholderForeground: #88747b !important;
-  --vscode-dropdown-background: #fffdf2f7 !important;
-  --vscode-focusBorder: #dc8298 !important;
-  --vscode-button-background: #70b78f !important;
-  --vscode-button-hoverBackground: #5ea37c !important;
-  --vscode-list-hoverBackground: #79bd9828 !important;
-  --vscode-list-activeSelectionBackground: #79bd9842 !important;
-  --vscode-textLink-foreground: #387654 !important;
-  --vscode-scrollbarSlider-background: #79bd983d !important;
+  --startup-background: var(--shinobu-yellow) !important;
+  --startup-logo-shimmer-base: var(--shinobu-secondary) !important;
+  --color-background-surface: color-mix(in srgb, var(--shinobu-cream) 70%, transparent) !important;
+  --color-background-surface-under: var(--shinobu-yellow) !important;
+  --color-background-editor-opaque: var(--shinobu-cream) !important;
+  --color-background-elevated-primary: color-mix(in srgb, var(--shinobu-cream) 97%, transparent) !important;
+  --color-background-elevated-primary-opaque: var(--shinobu-cream) !important;
+  --color-background-elevated-secondary: color-mix(in srgb, var(--shinobu-mint-soft) 94%, transparent) !important;
+  --color-background-elevated-secondary-opaque: var(--shinobu-mint-soft) !important;
+  --color-background-control: color-mix(in srgb, var(--shinobu-cream) 93%, transparent) !important;
+  --color-background-control-opaque: var(--shinobu-cream) !important;
+  --color-background-panel: color-mix(in srgb, var(--shinobu-cream) 93%, transparent) !important;
+  --color-background-button-primary: var(--shinobu-strong) !important;
+  --color-background-button-primary-hover: color-mix(in srgb, var(--shinobu-strong) 88%, black) !important;
+  --color-background-button-primary-active: color-mix(in srgb, var(--shinobu-strong) 76%, black) !important;
+  --color-background-button-secondary: color-mix(in srgb, var(--shinobu-mint-soft) 93%, transparent) !important;
+  --color-background-button-secondary-hover: color-mix(in srgb, var(--shinobu-mint-soft) 82%, var(--shinobu-mint)) !important;
+  --color-background-button-secondary-active: color-mix(in srgb, var(--shinobu-mint-soft) 68%, var(--shinobu-mint)) !important;
+  --color-background-accent: color-mix(in srgb, var(--shinobu-mint) 22%, transparent) !important;
+  --color-background-accent-hover: color-mix(in srgb, var(--shinobu-mint) 32%, transparent) !important;
+  --color-background-accent-active: color-mix(in srgb, var(--shinobu-blush) 28%, transparent) !important;
+  --color-text-foreground: var(--shinobu-ink) !important;
+  --color-text-foreground-secondary: var(--shinobu-muted) !important;
+  --color-text-foreground-tertiary: color-mix(in srgb, var(--shinobu-muted) 78%, var(--shinobu-cream)) !important;
+  --color-text-accent: var(--shinobu-strong) !important;
+  --color-text-link: var(--shinobu-link) !important;
+  --color-icon-primary: var(--shinobu-strong) !important;
+  --color-icon-secondary: var(--shinobu-muted) !important;
+  --color-icon-tertiary: color-mix(in srgb, var(--shinobu-muted) 78%, var(--shinobu-cream)) !important;
+  --color-border: color-mix(in srgb, var(--shinobu-mint) 42%, transparent) !important;
+  --color-border-light: color-mix(in srgb, var(--shinobu-cream) 76%, transparent) !important;
+  --color-border-heavy: color-mix(in srgb, var(--shinobu-strong) 56%, transparent) !important;
+  --color-border-focus: var(--shinobu-blush) !important;
+  --color-token-main-surface-primary: color-mix(in srgb, var(--shinobu-cream) 58%, transparent) !important;
+  --color-token-side-bar-background: color-mix(in srgb, var(--shinobu-yellow-soft) 93%, transparent) !important;
+  --color-token-foreground: var(--shinobu-ink) !important;
+  --color-token-input-background: color-mix(in srgb, var(--shinobu-cream) 95%, transparent) !important;
+  --vscode-editor-background: color-mix(in srgb, var(--shinobu-cream) 91%, transparent) !important;
+  --vscode-sideBar-background: color-mix(in srgb, var(--shinobu-yellow-soft) 93%, transparent) !important;
+  --vscode-input-background: color-mix(in srgb, var(--shinobu-cream) 95%, transparent) !important;
+  --vscode-input-border: color-mix(in srgb, var(--shinobu-mint) 52%, transparent) !important;
+  --vscode-input-placeholderForeground: var(--shinobu-muted) !important;
+  --vscode-dropdown-background: color-mix(in srgb, var(--shinobu-cream) 97%, transparent) !important;
+  --vscode-focusBorder: var(--shinobu-blush) !important;
+  --vscode-button-background: var(--shinobu-strong) !important;
+  --vscode-button-hoverBackground: color-mix(in srgb, var(--shinobu-strong) 88%, black) !important;
+  --vscode-list-hoverBackground: color-mix(in srgb, var(--shinobu-mint) 18%, transparent) !important;
+  --vscode-list-activeSelectionBackground: color-mix(in srgb, var(--shinobu-mint) 30%, transparent) !important;
+  --vscode-textLink-foreground: var(--shinobu-link) !important;
+  --vscode-scrollbarSlider-background: color-mix(in srgb, var(--shinobu-mint) 26%, transparent) !important;
   --vscode-terminal-background: #26352e !important;
   --vscode-terminal-foreground: #f8fff9 !important;
 }
@@ -89,19 +91,24 @@ html[data-shinobu-theme="active"] #root {
   height: 100%;
   isolation: isolate;
   color: var(--shinobu-ink) !important;
-  background:
-    radial-gradient(circle, #fff 0 1px, transparent 1.7px) 0 0 / 42px 42px,
-    radial-gradient(circle at 13% 84%, #dc82982b, transparent 31%),
-    linear-gradient(90deg, #f7ed73f2 0 20%, #fff5a052 20% 100%),
-    linear-gradient(135deg, #f7ed73 0%, #fff5a0 47%, #cfead9 100%) !important;
+  background-color: var(--shinobu-yellow) !important;
+  background-image:
+    radial-gradient(circle, #fff 0 1px, transparent 1.7px),
+    linear-gradient(90deg, color-mix(in srgb, var(--shinobu-cream) 92%, transparent) 0%, color-mix(in srgb, var(--shinobu-cream) 68%, transparent) 36%, color-mix(in srgb, var(--shinobu-yellow-soft) 16%, transparent) 50%, transparent 58%),
+    radial-gradient(circle at 13% 84%, color-mix(in srgb, var(--shinobu-blush) 18%, transparent), transparent 31%),
+    var(--shinobu-art-image),
+    linear-gradient(135deg, var(--shinobu-yellow) 0%, var(--shinobu-yellow-soft) 47%, var(--shinobu-mint-soft) 100%) !important;
+  background-position: 0 0, center, center, var(--shinobu-art-position), center !important;
+  background-size: 42px 42px, cover, cover, var(--shinobu-art-fit), cover !important;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat !important;
 }
 
 html[data-shinobu-theme="active"] .app-shell-left-panel {
   color: var(--shinobu-ink) !important;
   background:
-    linear-gradient(180deg, #fff7a5f5, #f4e96fee 58%, #cce9d8ed),
-    radial-gradient(circle at 20% 12%, #fffdf2c4, transparent 34%) !important;
-  border-right: 1px solid #79bd9878 !important;
+    linear-gradient(180deg, color-mix(in srgb, var(--shinobu-yellow-soft) 96%, white), color-mix(in srgb, var(--shinobu-yellow) 93%, transparent) 58%, color-mix(in srgb, var(--shinobu-mint-soft) 93%, transparent)),
+    radial-gradient(circle at 20% 12%, color-mix(in srgb, var(--shinobu-cream) 76%, transparent), transparent 34%) !important;
+  border-right: 1px solid color-mix(in srgb, var(--shinobu-mint) 48%, transparent) !important;
   box-shadow: 2px 0 #fff9 inset, 12px 0 30px #6d765226 !important;
   backdrop-filter: blur(18px) saturate(1.08);
 }
@@ -113,7 +120,7 @@ html[data-shinobu-theme="active"] [data-app-action-sidebar-project-row] {
 
 html[data-shinobu-theme="active"] [data-app-action-sidebar-thread-active="true"] {
   color: var(--shinobu-ink) !important;
-  background: linear-gradient(90deg, #79bd9847, #fffdf27d 70%, #dc82982e) !important;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--shinobu-mint) 28%, transparent), color-mix(in srgb, var(--shinobu-cream) 49%, transparent) 70%, color-mix(in srgb, var(--shinobu-blush) 18%, transparent)) !important;
   box-shadow: inset 3px 0 var(--shinobu-blush), 0 7px 18px #6d765226 !important;
 }
 
@@ -124,24 +131,21 @@ html[data-shinobu-theme="active"] .browser-main-surface {
   overflow: hidden;
   isolation: isolate;
   color: var(--shinobu-ink) !important;
-  background-color: var(--shinobu-yellow) !important;
+  background-color: transparent !important;
   background-image:
-    linear-gradient(90deg, #fffdf2f0 0%, #fffdf2d9 38%, #fff5a878 66%, #dff1e62f 100%),
-    radial-gradient(circle at 18% 82%, #dff1e68c, transparent 34%),
-    var(--shinobu-art-image),
-    linear-gradient(135deg, #fffdf2 0%, #fff5a8 52%, #dff1e6 100%) !important;
+    linear-gradient(90deg, color-mix(in srgb, var(--shinobu-cream) 96%, transparent) 0%, color-mix(in srgb, var(--shinobu-cream) 78%, transparent) 38%, color-mix(in srgb, var(--shinobu-yellow-soft) 14%, transparent) 52%, transparent 60%),
+    radial-gradient(circle at 18% 82%, color-mix(in srgb, var(--shinobu-mint-soft) 55%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--shinobu-cream) 40%, transparent) 0%, color-mix(in srgb, var(--shinobu-yellow-soft) 12%, transparent) 52%, transparent 100%) !important;
   background-position:
     center,
     center,
-    var(--shinobu-art-position),
     center !important;
   background-size:
     cover,
     cover,
-    var(--shinobu-art-fit),
     cover !important;
   background-repeat: no-repeat !important;
-  border: 1px solid #79bd9875 !important;
+  border: 1px solid color-mix(in srgb, var(--shinobu-mint) 46%, transparent) !important;
   border-radius: 20px 0 0 0 !important;
   box-shadow: inset 0 0 0 1px #fff9, 0 10px 34px #6d765233 !important;
 }
@@ -150,13 +154,13 @@ html[data-shinobu-theme="active"] .app-header-tint {
   position: relative;
   z-index: 12;
   color: var(--shinobu-ink) !important;
-  background: linear-gradient(90deg, #fffdf2f5, #e3f3e9f0 65%, #f7dce2e8) !important;
-  border-bottom: 1px solid #79bd9866 !important;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--shinobu-cream) 96%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 94%, transparent) 65%, color-mix(in srgb, var(--shinobu-blush) 18%, var(--shinobu-cream))) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--shinobu-mint) 40%, transparent) !important;
   backdrop-filter: blur(18px) saturate(1.08);
 }
 
 html[data-shinobu-theme="active"] .app-header-divider {
-  background: linear-gradient(90deg, transparent, #79bd98, #dc8298, transparent) !important;
+  background: linear-gradient(90deg, transparent, var(--shinobu-mint), var(--shinobu-blush), transparent) !important;
   opacity: .7;
 }
 
@@ -168,15 +172,32 @@ html[data-shinobu-theme="active"] [data-thread-title] {
 
 html[data-shinobu-theme="active"] .thread-scroll-container {
   background: transparent !important;
-  transition: padding-right 180ms ease-out;
+}
+
+/* Keep readable work surfaces inside the low-detail half whenever a window is
+   wide enough for a reading rail. The background remains one continuous layer. */
+@media (min-width: 800px) {
+  html[data-shinobu-theme="active"] .thread-scroll-container [data-mcp-app-portal-target="true"] {
+    width: min(860px, calc(100% - 48px), 32vw) !important;
+    max-width: min(860px, calc(100% - 48px), 32vw) !important;
+    margin-right: auto !important;
+    margin-left: 24px !important;
+  }
+
+  html[data-shinobu-theme="active"] [data-thread-scroll-footer="true"] [data-pip-obstacle="thread-footer"] {
+    width: min(880px, calc(100% - 48px), 32vw) !important;
+    max-width: min(880px, calc(100% - 48px), 32vw) !important;
+    margin-right: auto !important;
+    margin-left: 24px !important;
+  }
 }
 
 html[data-shinobu-theme="active"] .composer-surface-chrome {
   color: var(--shinobu-ink) !important;
-  background: linear-gradient(145deg, #fffdf2f7, #e7f4ecf3) !important;
-  border: 1px solid #79bd98a8 !important;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--shinobu-cream) 97%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 95%, transparent)) !important;
+  border: 1px solid color-mix(in srgb, var(--shinobu-mint) 66%, transparent) !important;
   border-radius: 20px !important;
-  box-shadow: inset 0 1px #fff, 0 12px 28px #6d765233, 0 0 20px #dc82981f !important;
+  box-shadow: inset 0 1px #fff, 0 12px 28px #6d765233, 0 0 20px color-mix(in srgb, var(--shinobu-blush) 12%, transparent) !important;
   backdrop-filter: blur(18px) saturate(1.08);
 }
 
@@ -186,8 +207,8 @@ html[data-shinobu-theme="active"][data-shinobu-motion="on"] .composer-surface-ch
 
 html[data-shinobu-theme="active"] [data-user-message-bubble] {
   color: var(--shinobu-ink) !important;
-  background: linear-gradient(135deg, #cdebd9f5, #b8dfc8f0) !important;
-  border: 1px solid #70b78f8c !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--shinobu-mint-soft) 96%, transparent), color-mix(in srgb, var(--shinobu-mint) 42%, var(--shinobu-cream))) !important;
+  border: 1px solid color-mix(in srgb, var(--shinobu-mint) 55%, transparent) !important;
   border-radius: 16px !important;
   box-shadow: 0 8px 18px #6d765227 !important;
 }
@@ -195,9 +216,9 @@ html[data-shinobu-theme="active"] [data-user-message-bubble] {
 html[data-shinobu-theme="active"] [data-local-conversation-final-assistant] {
   padding: 16px 18px;
   color: var(--shinobu-ink) !important;
-  border: 1px solid #79bd986b;
+  border: 1px solid color-mix(in srgb, var(--shinobu-mint) 42%, transparent);
   border-radius: 18px;
-  background: #fffdf2d9;
+  background: color-mix(in srgb, var(--shinobu-cream) 86%, transparent);
   box-shadow: 0 10px 22px #6d765229;
   backdrop-filter: blur(14px) saturate(1.06);
 }
@@ -207,9 +228,9 @@ html[data-shinobu-theme="active"] [data-mcp-app-card],
 html[data-shinobu-theme="active"] [data-composer-attachment-pill],
 html[data-shinobu-theme="active"] .codex-review-diff-card {
   color: var(--shinobu-ink) !important;
-  border: 1px solid #79bd986f !important;
+  border: 1px solid color-mix(in srgb, var(--shinobu-mint) 44%, transparent) !important;
   border-radius: 16px !important;
-  background: #fffdf2f2 !important;
+  background: color-mix(in srgb, var(--shinobu-cream) 95%, transparent) !important;
   box-shadow: 0 10px 22px #6d76522b !important;
 }
 
@@ -219,9 +240,9 @@ html[data-shinobu-theme="active"] [role="listbox"][data-state="open"],
 html[data-shinobu-theme="active"] [data-radix-menu-content],
 html[data-shinobu-theme="active"] [data-radix-popper-content-wrapper] > div {
   color: var(--shinobu-ink) !important;
-  border-color: #79bd987d !important;
-  background: #fffdf2fa !important;
-  box-shadow: 0 16px 36px #6d76523d, 0 0 18px #dc829824 !important;
+  border-color: color-mix(in srgb, var(--shinobu-mint) 49%, transparent) !important;
+  background: color-mix(in srgb, var(--shinobu-cream) 98%, transparent) !important;
+  box-shadow: 0 16px 36px #6d76523d, 0 0 18px color-mix(in srgb, var(--shinobu-blush) 14%, transparent) !important;
   backdrop-filter: blur(20px) saturate(1.08);
 }
 
@@ -243,20 +264,20 @@ html[data-shinobu-theme="active"] [tabindex]:focus-visible {
 html[data-shinobu-theme="active"] pre,
 html[data-shinobu-theme="active"] .monaco-editor,
 html[data-shinobu-theme="active"] .xterm {
-  border: 1px solid #79bd985c !important;
+  border: 1px solid color-mix(in srgb, var(--shinobu-mint) 36%, transparent) !important;
   border-radius: 13px !important;
   box-shadow: 0 9px 20px #6d76522b !important;
 }
 
 html[data-shinobu-theme="active"] ::selection {
   color: var(--shinobu-ink);
-  background: #f4e96fbd;
+  background: color-mix(in srgb, var(--shinobu-yellow) 74%, transparent);
 }
 
 html[data-shinobu-theme="active"] ::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
-  background: linear-gradient(#79bd98, #f4e96f, #dc8298) padding-box !important;
+  background: linear-gradient(var(--shinobu-mint), var(--shinobu-yellow), var(--shinobu-blush)) padding-box !important;
 }
 
 html[data-shinobu-theme="active"] .startup-loader {
@@ -265,31 +286,24 @@ html[data-shinobu-theme="active"] .startup-loader {
   height: 100%;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 42%, #fff7a5, #f4e96f 60%, #b8dfc8) !important;
+  background: radial-gradient(circle at 50% 42%, var(--shinobu-yellow-soft), var(--shinobu-yellow) 60%, var(--shinobu-mint-soft)) !important;
   -webkit-app-region: drag;
 }
 
 html[data-shinobu-theme="active"] .startup-loader__base {
-  color: #70b78f !important;
-  filter: drop-shadow(0 0 16px #dc829866);
+  color: var(--shinobu-strong) !important;
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--shinobu-blush) 40%, transparent));
 }
 
-@media (max-width: 1179px) {
-  html[data-shinobu-theme="active"] .thread-scroll-container {
-    padding-right: 0 !important;
-  }
-}
-
-@media (max-width: 720px) {
+@media (max-width: 799px) {
   html[data-shinobu-theme="active"] .main-surface,
   html[data-shinobu-theme="active"] .browser-main-surface {
     border-radius: 0 !important;
     background-image:
-      linear-gradient(145deg, #fffdf2e8, #e2f3e9bd),
-      var(--shinobu-art-image),
-      linear-gradient(145deg, #fffdf2, #e2f3e9) !important;
-    background-position: center, var(--shinobu-art-position), center !important;
-    background-size: cover, var(--shinobu-art-fit), cover !important;
+      linear-gradient(145deg, color-mix(in srgb, var(--shinobu-cream) 92%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 74%, transparent)),
+      linear-gradient(145deg, color-mix(in srgb, var(--shinobu-cream) 72%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 38%, transparent)) !important;
+    background-position: center, center !important;
+    background-size: cover, cover !important;
     background-repeat: no-repeat !important;
   }
 }

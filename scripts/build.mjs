@@ -6,7 +6,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const [template, rawCss, hero, previewTemplate, manifestText] = await Promise.all([
   readFile(join(root, "src", "index.template.js"), "utf8"),
   readFile(join(root, "src", "theme.css"), "utf8"),
-  readFile(join(root, "assets", "shinobu-hero-portrait.webp")),
+  readFile(join(root, "assets", "shinobu-hero-safe-landscape.webp")),
   readFile(join(root, "preview", "template.html"), "utf8"),
   readFile(join(root, "manifest.json"), "utf8"),
 ]);

@@ -1,10 +1,16 @@
 [CmdletBinding()]
-param()
+param(
+  [string]$OutputRoot
+)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $manifest = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $root 'manifest.json') | ConvertFrom-Json
-$outputRoot = Join-Path $root 'output'
+$outputRoot = if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
+  Join-Path $root 'output'
+} else {
+  $OutputRoot
+}
 $folderName = "codex-shinobu-theme-v$($manifest.version)"
 $staging = Join-Path $outputRoot $folderName
 $zipPath = Join-Path $outputRoot "$folderName-windows.zip"
@@ -21,14 +27,18 @@ New-Item -ItemType Directory -Path $staging | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $staging 'assets') | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'dist') -Destination (Join-Path $staging 'dist') -Recurse
 Copy-Item -LiteralPath (Join-Path $root 'assets\shinobu-icon.svg') -Destination (Join-Path $staging 'assets\shinobu-icon.svg')
-Copy-Item -LiteralPath (Join-Path $root 'assets\shinobu-hero-portrait.webp') -Destination (Join-Path $staging 'assets\shinobu-hero-portrait.webp')
+Copy-Item -LiteralPath (Join-Path $root 'assets\shinobu-hero-safe-landscape.webp') -Destination (Join-Path $staging 'assets\shinobu-hero-safe-landscape.webp')
+Copy-Item -LiteralPath (Join-Path $root 'assets\shinobu-icon.svg') -Destination (Join-Path $staging 'assets\shinobu-icon.svg')
 Copy-Item -LiteralPath (Join-Path $root 'assets\artwork.json') -Destination (Join-Path $staging 'assets\artwork.json')
 Copy-Item -LiteralPath (Join-Path $root 'assets\preview.png') -Destination (Join-Path $staging 'assets\preview.png')
+Copy-Item -LiteralPath (Join-Path $root 'docs') -Destination (Join-Path $staging 'docs') -Recurse
+Copy-Item -LiteralPath (Join-Path $root 'tools') -Destination (Join-Path $staging 'tools') -Recurse
 
 $files = @(
   'manifest.json',
   'install.ps1',
   'install.cmd',
+  'Optimize-Codex.cmd',
   'uninstall.ps1',
   'README.md',
   'CHANGELOG.md',

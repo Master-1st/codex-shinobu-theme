@@ -1,38 +1,87 @@
 <!doctype html>
-<html lang="zh-CN" data-codex-window-type="electron" data-shinobu-theme="active" data-shinobu-motion="on" data-shinobu-artwork="on">
+<html lang="zh-CN" data-codex-window-type="electron" data-shinobu-theme="active" data-shinobu-motion="on" data-shinobu-artwork="on" data-shinobu-auto-palette="off">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Codex Shinobu Theme Preview</title>
+    <title>Codex Shinobu Theme Visual QA</title>
     <style>
       * { box-sizing: border-box; }
-      body { font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif; overflow: hidden; }
-      button, textarea { font: inherit; }
+      html, body { overflow: hidden; }
+      body { font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif; }
+      button, textarea, select { font: inherit; }
       .preview-shell { display: grid; grid-template-columns: 270px 1fr; height: 100vh; padding: 12px 12px 0; gap: 10px; }
-      .app-shell-left-panel { padding: 18px 12px; border-radius: 18px 18px 0 0; }
+      .app-shell-left-panel { min-width: 0; padding: 18px 12px; border-radius: 18px 18px 0 0; overflow: hidden; }
       .brand { display: flex; align-items: center; gap: 10px; margin: 4px 8px 24px; font-weight: 750; }
-      .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border: 7px solid #79bd98; border-radius: 50%; }
-      .side-label { margin: 20px 10px 8px; color: #715f66; font-size: 11px; font-weight: 700; letter-spacing: .13em; }
-      .side-row { padding: 10px 12px; margin: 3px 0; font-size: 13px; }
-      .main-surface { display: grid; grid-template-rows: 58px 1fr; overflow: hidden; }
+      .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border: 7px solid var(--shinobu-mint); border-radius: 50%; }
+      .side-label { margin: 20px 10px 8px; color: var(--shinobu-muted); font-size: 11px; font-weight: 700; letter-spacing: .13em; }
+      .side-row { padding: 10px 12px; margin: 3px 0; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+      .main-surface { display: grid; grid-template-rows: 58px 1fr; min-width: 0; overflow: hidden; }
       .app-header-tint { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
       .header-actions { display: flex; gap: 8px; }
-      .header-actions button { color: #715f66; background: #fff9; border: 1px solid #79bd9852; border-radius: 9px; padding: 7px 10px; }
-      .thread-scroll-container { position: relative; display: flex; min-height: 0; flex-direction: column; overflow: auto; }
-      .conversation { width: min(830px, calc(100% - 56px)); margin: 0 auto; padding: 46px 0 24px; flex: 1; }
+      .header-actions button { color: var(--shinobu-muted); background: color-mix(in srgb, var(--shinobu-cream) 72%, transparent); border: 1px solid color-mix(in srgb, var(--shinobu-mint) 32%, transparent); border-radius: 9px; padding: 7px 10px; }
+      .workspace { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+      .thread-scroll-container { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; overflow: hidden; }
+      .conversation { width: min(860px, calc(100% - 48px), 32vw); max-width: min(860px, calc(100% - 48px), 32vw); min-height: 0; margin: 0 auto 0 24px; padding: 42px 0 24px; overflow: auto; }
       [data-user-message-bubble] { width: fit-content; max-width: 70%; margin-left: auto; padding: 12px 15px; }
-      [data-local-conversation-final-assistant] { max-width: 88%; margin-top: 22px; line-height: 1.65; }
-      [data-thread-scroll-footer] { position: sticky; bottom: 0; width: 100%; padding: 10px 0 24px; }
-      .composer-wrap { width: min(880px, calc(100% - 48px)); margin: 0 auto; }
+      [data-local-conversation-final-assistant] { max-width: 100%; margin-top: 22px; line-height: 1.65; }
+      .activity-line { margin: 18px 2px; color: var(--shinobu-muted); font-size: 13px; }
+      .long-copy { display: none; }
+      [data-codex-approval-surface] { display: none; margin-top: 18px; padding: 16px; }
+      .approval-actions { display: flex; gap: 8px; margin-top: 12px; }
+      .approval-actions button { padding: 7px 12px; border: 0; border-radius: 9px; color: #fff; background: var(--shinobu-strong); }
+      pre { overflow: auto; padding: 12px; background: color-mix(in srgb, var(--shinobu-cream) 90%, transparent); }
+      [data-thread-scroll-footer] { position: relative; width: 100%; padding: 10px 0 18px; }
+      .composer-wrap { width: min(880px, calc(100% - 48px), 32vw); max-width: min(880px, calc(100% - 48px), 32vw); margin: 0 auto 0 24px; }
       .composer-surface-chrome { padding: 14px 16px 10px; }
       .composer-surface-chrome textarea { width: 100%; min-height: 48px; resize: none; border: 0; outline: 0; background: transparent; }
-      .composer-footer { display: flex; align-items: center; justify-content: space-between; color: #715f66; font-size: 12px; }
-      .send { width: 32px; height: 32px; border: 0; border-radius: 50%; color: #fff; background: #70b78f; }
-      code { color: #3f7e5d; }
+      .composer-footer { display: flex; align-items: center; justify-content: space-between; color: var(--shinobu-muted); font-size: 12px; }
+      .send { width: 32px; height: 32px; border: 0; border-radius: 50%; color: #fff; background: var(--shinobu-strong); }
+      .detail-pane { display: none; position: relative; min-width: 0; overflow: hidden; border-left: 1px solid color-mix(in srgb, var(--shinobu-mint) 34%, transparent); background: var(--color-token-main-surface-primary); }
+      .detail-content { height: 100%; padding: 26px; }
+      .detail-card { max-width: 560px; margin: 44px auto; padding: 18px; border: 1px solid color-mix(in srgb, var(--shinobu-mint) 40%, transparent); border-radius: 18px; background: color-mix(in srgb, var(--shinobu-cream) 80%, transparent); }
+      .detail-composer { position: absolute; right: 24px; bottom: 18px; width: min(520px, calc(100% - 48px)); }
+      .settings-panel { display: none; width: min(720px, calc(100% - 48px)); margin: 34px 0 0 24px; padding: 22px; border: 1px solid color-mix(in srgb, var(--shinobu-mint) 44%, transparent); border-radius: 18px; background: color-mix(in srgb, var(--shinobu-cream) 90%, transparent); }
+      .settings-row { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; padding: 14px 0; border-bottom: 1px solid color-mix(in srgb, var(--shinobu-mint) 24%, transparent); }
+      .settings-row:last-child { border: 0; }
+      .settings-row small { display: block; margin-top: 3px; color: var(--shinobu-muted); }
+      .switch { width: 34px; height: 20px; padding: 2px; border: 0; border-radius: 999px; background: var(--shinobu-strong); }
+      .switch::after { display: block; width: 16px; height: 16px; margin-left: 14px; border-radius: 50%; background: #fff; content: ""; }
+      .swatches { display: flex; gap: 6px; }
+      .swatches i { width: 24px; height: 24px; border: 1px solid #0002; border-radius: 50%; }
+      .menu-trigger { position: relative; }
+      [role="menu"][data-state="open"] { display: none; position: absolute; z-index: 30; top: 54px; right: 22px; width: 230px; padding: 8px; }
+      [role="menu"] button { width: 100%; padding: 9px 10px; border: 0; border-radius: 8px; text-align: left; background: transparent; color: inherit; }
+      [role="dialog"][data-state="open"] { display: none; position: fixed; z-index: 40; top: 22%; left: 50%; width: min(520px, calc(100vw - 48px)); transform: translateX(-50%); padding: 22px; }
+      .dialog-backdrop { display: none; position: fixed; z-index: 35; inset: 0; background: #33262c3b; }
+      code { color: var(--shinobu-link); }
+
+      body[data-state="split"] .workspace { grid-template-columns: minmax(0, 37%) minmax(0, 63%); }
+      body[data-state="split"] .detail-pane { display: block; }
+      body[data-state="long"] .long-copy { display: block; }
+      body[data-state="approval"] [data-codex-approval-surface] { display: block; }
+      body[data-state="menu"] [role="menu"][data-state="open"] { display: block; }
+      body[data-state="dialog"] [role="dialog"][data-state="open"],
+      body[data-state="dialog"] .dialog-backdrop { display: block; }
+      body[data-state="settings"] .workspace { display: none; }
+      body[data-state="settings"] .settings-panel { display: block; }
+
+      @media (max-width: 900px) {
+        .preview-shell { grid-template-columns: 205px 1fr; padding: 0; gap: 0; }
+        .app-shell-left-panel, .main-surface { border-radius: 0 !important; }
+        .conversation, .composer-wrap { width: calc(100% - 32px); max-width: none; margin-left: 16px; }
+        body[data-state="split"] .workspace { grid-template-columns: 1fr; }
+        body[data-state="split"] .detail-pane { display: none; }
+      }
+
+      @media (max-width: 620px) {
+        .preview-shell { grid-template-columns: 1fr; }
+        .app-shell-left-panel { display: none; }
+        .conversation { padding-top: 24px; }
+      }
     </style>
     <style>__THEME_CSS__</style>
   </head>
-  <body>
+  <body data-state="normal">
     <div id="root">
       <div class="preview-shell">
         <aside class="app-shell-left-panel">
@@ -42,33 +91,100 @@
           <div class="side-row" data-app-action-sidebar-project-row>codex-shinobu-theme</div>
           <div class="side-label">最近任务</div>
           <div class="side-row" data-app-action-sidebar-thread-row data-app-action-sidebar-thread-active="true">制作 Windows 小忍主题</div>
-          <div class="side-row" data-app-action-sidebar-thread-row>检查原版图片接口</div>
+          <div class="side-row" data-app-action-sidebar-thread-row>验证双栏遮挡</div>
+          <div class="side-row" data-app-action-sidebar-thread-row>自动生成图片配色</div>
           <div class="side-row" data-app-action-sidebar-thread-row>打包 GitHub Release</div>
         </aside>
         <main class="main-surface">
           <header class="app-header-tint">
             <div data-thread-title>制作 Windows 小忍主题</div>
-            <div class="header-actions"><button>打开</button><button>•••</button></div>
+            <div class="header-actions menu-trigger"><button>打开</button><button>•••</button></div>
           </header>
-          <section class="thread-scroll-container">
-            <div class="conversation" data-mcp-app-portal-target="true">
-              <div data-user-message-bubble>不要让对话挡住小忍，界面再简单一点。</div>
-              <article data-local-conversation-final-assistant>
-                已改成左右分区：聊天、回复与输入框只占左侧工作区，右侧原图保持完整清晰。<br><br>
-                图片只保存在本机；可在设置中更换，并切换 <code>完整显示 / 铺满画框</code>。
-              </article>
-            </div>
-            <div data-thread-scroll-footer="true">
-              <div class="composer-wrap" data-pip-obstacle="thread-footer">
-                <div class="composer-surface-chrome">
-                  <textarea placeholder="让 Codex 继续完善主题…"></textarea>
-                  <div class="composer-footer"><span>本地 · 高权限</span><button class="send">↑</button></div>
+          <div class="workspace">
+            <section class="thread-scroll-container">
+              <div class="conversation" data-mcp-app-portal-target="true">
+                <div class="activity-line">▣ 运行了多个命令</div>
+                <div data-user-message-bubble>这种双栏状态会遮挡小忍，你自己把所有功能验证一遍。</div>
+                <article data-local-conversation-final-assistant>
+                  已把人物重新构图到右侧安全区，并把背景提升到整个工作区根层。普通对话、双栏、长输出、审批卡、菜单与输入框都会使用同一张连续背景。
+                  <div class="long-copy">
+                    <p>长输出验证：这段内容用于确认滚动、代码块、引用和多段文字不会越过内容安全区。</p>
+                    <pre><code>theme.palette.generate(image)
+theme.layout.safeArea = "right";
+theme.verify(["normal", "split", "dialog"]);</code></pre>
+                    <p>图片仍只保存在本机，换图后自动生成主色、辅助色、强调色和高对比文字色。</p>
+                  </div>
+                </article>
+                <section data-codex-approval-surface>
+                  <strong>允许执行本地安装脚本？</strong>
+                  <div>将更新 Codex++ 的小忍主题文件，不会修改 Microsoft Store 原版。</div>
+                  <div class="approval-actions"><button>允许</button><button>取消</button></div>
+                </section>
+              </div>
+              <div data-thread-scroll-footer="true">
+                <div class="composer-wrap" data-pip-obstacle="thread-footer">
+                  <div class="composer-surface-chrome">
+                    <textarea placeholder="让 Codex 继续完善主题…"></textarea>
+                    <div class="composer-footer"><span>本地 · 高权限</span><button class="send">↑</button></div>
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
+            <section class="detail-pane bg-token-main-surface-primary">
+              <div class="detail-content">
+                <div class="detail-card">
+                  <strong>右侧工作区 / 输出预览</strong>
+                  <p>双栏打开时，人物仍位于整窗右侧背景，不再被裁切到左栏文字下面。</p>
+                </div>
+                <div class="detail-composer composer-surface-chrome" data-preview-detail-composer="true">
+                  <textarea placeholder="右侧任务输入…"></textarea>
+                  <div class="composer-footer"><span>右侧任务</span><button class="send">↑</button></div>
+                </div>
+              </div>
+            </section>
+          </div>
+          <section class="settings-panel">
+            <h2>小忍主题外观</h2>
+            <p>图片保存在本机，换图后可以自动生成可读主题色。</p>
+            <div class="settings-row"><div>显示角色主视觉<small>关闭后只保留主题配色。</small></div><button class="switch" aria-label="显示角色主视觉"></button></div>
+            <div class="settings-row"><div>根据图片自动配色<small>主文字对比度至少 7:1。</small></div><button class="switch" aria-label="自动配色"></button></div>
+            <div class="settings-row"><div>生成色板<small>主色、辅助色、强调色、表面色、文字色。</small></div><div class="swatches"><i style="background:var(--shinobu-yellow)"></i><i style="background:var(--shinobu-mint)"></i><i style="background:var(--shinobu-blush)"></i><i style="background:var(--shinobu-cream)"></i><i style="background:var(--shinobu-ink)"></i></div></div>
           </section>
+          <div role="menu" data-state="open"><button>重命名</button><button>复制任务链接</button><button>归档任务</button></div>
         </main>
       </div>
+      <div class="dialog-backdrop"></div>
+      <section role="dialog" data-state="open">
+        <h3>选择本地图片</h3>
+        <p>支持 PNG、JPG 和 WebP。图片不会上传，导入后自动生成主题色。</p>
+        <button>选择图片</button>
+      </section>
     </div>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const state = params.get("state") || "normal";
+      document.body.dataset.state = state;
+      if (params.get("art") === "off") {
+        document.documentElement.dataset.shinobuArtwork = "off";
+        document.documentElement.style.setProperty("--shinobu-art-image", "none");
+      }
+      if (params.get("palette") === "blue") {
+        const root = document.documentElement;
+        root.dataset.shinobuAutoPalette = "on";
+        const palette = {
+          "--shinobu-yellow": "#6d94d8",
+          "--shinobu-yellow-soft": "#dce8fb",
+          "--shinobu-mint": "#8172ba",
+          "--shinobu-mint-soft": "#e7e2f5",
+          "--shinobu-blush": "#d06f9d",
+          "--shinobu-cream": "#f8faff",
+          "--shinobu-ink": "#202a3d",
+          "--shinobu-muted": "#526079",
+          "--shinobu-strong": "#4b3c86",
+          "--shinobu-link": "#364f93"
+        };
+        for (const [key, value] of Object.entries(palette)) root.style.setProperty(key, value);
+      }
+    </script>
   </body>
 </html>

@@ -57,6 +57,8 @@ test("built theme is self-contained and exposes the local artwork interface", as
   assert.match(source, /CODEX_SHINOBU_THEME v1/);
   assert.match(source, /data:image\/webp;base64,/);
   assert.match(source, /选择本地图片/);
+  assert.match(source, /根据图片自动配色/);
+  assert.match(source, /buildPaletteFromPixels/);
   assert.match(source, /api\.fs\.write\(ARTWORK_FILE/);
   assert.doesNotMatch(source, /__THEME_CSS_JSON__|__SHINOBU_HERO_DATA_URI__/);
   assert.doesNotMatch(source, /https?:\/\//);
@@ -116,14 +118,260 @@ test("renderer lifecycle installs and removes one scoped style", async () => {
   assert.equal(appended.length, 1);
   assert.equal(attributes.get("data-shinobu-theme"), "active");
   assert.equal(attributes.get("data-shinobu-motion"), "on");
-  assert.equal(properties.get("--shinobu-art-fit"), "cover");
+  assert.equal(attributes.get("data-shinobu-auto-palette"), "on");
+  assert.equal(properties.get("--shinobu-art-fit"), "contain");
   assert.equal(pages.length, 1);
   assert.equal(pages[0].title, "小忍主题");
 
   module.exports.stop();
   assert.equal(appended[0].removed, true);
   assert.equal(attributes.has("data-shinobu-theme"), false);
+  assert.equal(attributes.has("data-shinobu-auto-palette"), false);
   assert.equal(properties.has("--shinobu-art-fit"), false);
+});
+
+test("automatic palette produces distinct colors with readable text", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const module = { exports: {} };
+  vm.runInNewContext(source, { module, exports: module.exports, console });
+  const pixels = [];
+  const add = (count, color) => {
+    for (let index = 0; index < count; index += 1) pixels.push(...color, 255);
+  };
+  add(3000, [244, 233, 111]);
+  add(1300, [121, 189, 152]);
+  add(884, [220, 130, 152]);
+
+  const palette = module.exports.__test.buildPaletteFromPixels(Uint8ClampedArray.from(pixels));
+  assert.equal(module.exports.__test.isValidPalette(palette), true);
+  assert.notEqual(palette.primary, palette.secondary);
+  assert.notEqual(palette.secondary, palette.accent);
+  assert.ok(module.exports.__test.contrastRatio(palette.ink, palette.surface) >= 7);
+  assert.ok(module.exports.__test.contrastRatio(palette.muted, palette.surface) >= 4.5);
+});
+
+test("stored artwork palette applies and is fully removed on stop", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const attributes = new Map();
+  const properties = new Map();
+  const rootElement = {
+    style: {
+      setProperty: (name, value) => properties.set(name, value),
+      removeProperty: (name) => properties.delete(name),
+    },
+    setAttribute: (name, value) => attributes.set(name, value),
+    removeAttribute: (name) => attributes.delete(name),
+  };
+  const document = {
+    documentElement: rootElement,
+    head: { appendChild() {} },
+    createElement: () => ({ dataset: {}, style: {}, remove() {} }),
+  };
+  const palette = {
+    version: 1,
+    primary: "#f4e96f",
+    primarySoft: "#fff5a8",
+    secondary: "#79bd98",
+    secondarySoft: "#dff1e6",
+    accent: "#dc8298",
+    surface: "#fffdf2",
+    ink: "#33262c",
+    muted: "#715f66",
+    strong: "#3f7e5d",
+    link: "#387654",
+  };
+  const store = new Map([["autoPaletteEnabled", true], ["layoutVersion", 2]]);
+  const module = { exports: {} };
+  vm.runInNewContext(source, { module, exports: module.exports, document, console });
+  await module.exports.start({
+    process: "renderer",
+    manifest: { id: "io.github.master1st.codex-shinobu-theme" },
+    storage: {
+      get: (key, fallback) => store.has(key) ? store.get(key) : fallback,
+      set: (key, value) => store.set(key, value),
+    },
+    fs: {
+      exists: async () => true,
+      read: async () => JSON.stringify({ name: "custom.png", dataUrl: "data:image/webp;base64,AA==", palette }),
+      write: async () => {},
+    },
+    settings: { registerPage() {} },
+    log: { info() {}, warn() {}, error() {} },
+  });
+
+  assert.equal(properties.get("--shinobu-yellow"), palette.primary);
+  assert.equal(properties.get("--shinobu-mint"), palette.secondary);
+  assert.equal(properties.get("--shinobu-ink"), palette.ink);
+  module.exports.stop();
+  for (const variable of ["--shinobu-yellow", "--shinobu-mint", "--shinobu-blush", "--shinobu-cream", "--shinobu-ink"]) {
+    assert.equal(properties.has(variable), false, `${variable} should be removed`);
+  }
+});
+
+test("automatic palette can be disabled without leaving inline theme colors", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const attributes = new Map();
+  const properties = new Map();
+  const document = {
+    documentElement: {
+      style: {
+        setProperty: (name, value) => properties.set(name, value),
+        removeProperty: (name) => properties.delete(name),
+      },
+      setAttribute: (name, value) => attributes.set(name, value),
+      removeAttribute: (name) => attributes.delete(name),
+    },
+    head: { appendChild() {} },
+    createElement: () => ({ dataset: {}, style: {}, remove() {} }),
+  };
+  const palette = {
+    version: 1,
+    primary: "#f4e96f",
+    primarySoft: "#fff5a8",
+    secondary: "#79bd98",
+    secondarySoft: "#dff1e6",
+    accent: "#dc8298",
+    surface: "#fffdf2",
+    ink: "#33262c",
+    muted: "#715f66",
+    strong: "#3f7e5d",
+    link: "#387654",
+  };
+  const store = new Map([["autoPaletteEnabled", false], ["layoutVersion", 2]]);
+  const module = { exports: {} };
+  vm.runInNewContext(source, { module, exports: module.exports, document, console });
+
+  await module.exports.start({
+    process: "renderer",
+    manifest: { id: "io.github.master1st.codex-shinobu-theme" },
+    storage: {
+      get: (key, fallback) => store.has(key) ? store.get(key) : fallback,
+      set: (key, value) => store.set(key, value),
+    },
+    fs: {
+      exists: async () => true,
+      read: async () => JSON.stringify({ name: "custom.png", dataUrl: "data:image/webp;base64,AA==", palette }),
+      write: async () => {},
+    },
+    settings: { registerPage() {} },
+    log: { info() {}, warn() {}, error() {} },
+  });
+
+  assert.equal(attributes.get("data-shinobu-auto-palette"), "off");
+  assert.equal(properties.get("--shinobu-art-image"), 'url("data:image/webp;base64,AA==")');
+  for (const variable of ["--shinobu-yellow", "--shinobu-mint", "--shinobu-blush", "--shinobu-cream", "--shinobu-ink"]) {
+    assert.equal(properties.has(variable), false, `${variable} should use the bundled fallback`);
+  }
+});
+
+test("legacy local artwork is migrated to a readable palette on device", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const pixels = [];
+  const add = (count, color) => {
+    for (let index = 0; index < count; index += 1) pixels.push(...color, 255);
+  };
+  add(3000, [244, 233, 111]);
+  add(1300, [121, 189, 152]);
+  add(884, [220, 130, 152]);
+  const sampledPixels = Uint8ClampedArray.from(pixels);
+  const properties = new Map();
+  const writes = [];
+  const rootElement = {
+    style: {
+      setProperty: (name, value) => properties.set(name, value),
+      removeProperty: (name) => properties.delete(name),
+    },
+    setAttribute() {},
+    removeAttribute() {},
+  };
+  const canvasContext = {
+    drawImage() {},
+    getImageData: () => ({ data: sampledPixels }),
+  };
+  const document = {
+    documentElement: rootElement,
+    head: { appendChild() {} },
+    createElement: (tag) => tag === "canvas"
+      ? { width: 0, height: 0, getContext: () => canvasContext }
+      : { dataset: {}, style: {}, remove() {} },
+  };
+  class FakeImage {
+    naturalWidth = 1920;
+    naturalHeight = 1080;
+    set src(value) {
+      this.currentSrc = value;
+      this.onload();
+    }
+  }
+  const store = new Map([["autoPaletteEnabled", true], ["layoutVersion", 2]]);
+  const module = { exports: {} };
+  vm.runInNewContext(source, { module, exports: module.exports, document, Image: FakeImage, console });
+
+  await module.exports.start({
+    process: "renderer",
+    manifest: { id: "io.github.master1st.codex-shinobu-theme" },
+    storage: {
+      get: (key, fallback) => store.has(key) ? store.get(key) : fallback,
+      set: (key, value) => store.set(key, value),
+    },
+    fs: {
+      exists: async () => true,
+      read: async () => JSON.stringify({ name: "legacy.png", dataUrl: "data:image/png;base64,AA==" }),
+      write: async (...args) => writes.push(args),
+    },
+    settings: { registerPage() {} },
+    log: { info() {}, warn() {}, error() {} },
+  });
+
+  assert.equal(writes.length, 1);
+  const migrated = JSON.parse(writes[0][1]);
+  assert.equal(module.exports.__test.isValidPalette(migrated.palette), true);
+  assert.equal(properties.get("--shinobu-yellow"), migrated.palette.primary);
+  assert.ok(module.exports.__test.contrastRatio(migrated.palette.ink, migrated.palette.surface) >= 7);
+  assert.ok(module.exports.__test.contrastRatio(migrated.palette.muted, migrated.palette.surface) >= 4.5);
+});
+
+test("unreadable legacy artwork keeps the default palette instead of breaking startup", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const properties = new Map();
+  const warnings = [];
+  const document = {
+    documentElement: {
+      style: {
+        setProperty: (name, value) => properties.set(name, value),
+        removeProperty: (name) => properties.delete(name),
+      },
+      setAttribute() {},
+      removeAttribute() {},
+    },
+    head: { appendChild() {} },
+    createElement: () => ({ dataset: {}, style: {}, remove() {} }),
+  };
+  class BrokenImage {
+    set src(_value) {
+      this.onerror();
+    }
+  }
+  const module = { exports: {} };
+  vm.runInNewContext(source, { module, exports: module.exports, document, Image: BrokenImage, console });
+
+  await module.exports.start({
+    process: "renderer",
+    manifest: { id: "io.github.master1st.codex-shinobu-theme" },
+    storage: { get: (key, fallback) => key === "layoutVersion" ? 2 : fallback, set() {} },
+    fs: {
+      exists: async () => true,
+      read: async () => JSON.stringify({ name: "broken.png", dataUrl: "data:image/png;base64,AA==", palette: { primary: "bad" } }),
+      write: async () => assert.fail("invalid artwork must not overwrite the local record"),
+    },
+    settings: { registerPage() {} },
+    log: { info() {}, warn: (...args) => warnings.push(args), error() {} },
+  });
+
+  assert.equal(warnings.length, 1);
+  assert.equal(properties.has("--shinobu-yellow"), false);
+  assert.equal(properties.has("--shinobu-ink"), false);
+  assert.equal(properties.get("--shinobu-art-image"), 'url("data:image/png;base64,AA==")');
 });
 
 test("avatar overlay renderer is left untouched", async () => {
@@ -169,10 +417,28 @@ test("theme CSS scopes stable Codex surfaces and responsive fallbacks", async ()
   ]) {
     assert.ok(css.includes(selector), `missing selector ${selector}`);
   }
-  assert.match(css, /@media \(max-width: 720px\)/);
+  assert.match(css, /@media \(min-width: 800px\)[\s\S]*32vw/);
+  assert.match(css, /@media \(max-width: 799px\)/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /var\(--shinobu-art-image\)/);
   assert.match(css, /thread-scroll-container/);
+  assert.match(css, /#root[\s\S]*var\(--shinobu-art-image\)/);
+  assert.match(css, /data-mcp-app-portal-target="true"/);
+  assert.match(css, /data-pip-obstacle="thread-footer"/);
+  assert.match(css, /color-mix\(in srgb, var\(--shinobu-/);
   assert.match(css, /background-image:[\s\S]*var\(--shinobu-art-image\)/);
   assert.doesNotMatch(css, /shinobu-gallery-reserve/);
+});
+
+test("visual QA preview contains every supported state", async () => {
+  const preview = await readFile(new URL("../preview/index.html", import.meta.url), "utf8");
+  for (const state of ["normal", "split", "long", "approval", "menu", "dialog", "settings"]) {
+    assert.ok(preview.includes(`data-state=\"${state}\"`) || preview.includes(`data-state="${state}"`) || preview.includes(`state=\"${state}\"`) || preview.includes(`state === \"${state}\"`) || preview.includes(`data-state="${state}"`) || preview.includes(`body[data-state=\"${state}\"]`), `missing preview state ${state}`);
+  }
+  assert.match(preview, /palette.*blue/);
+  assert.match(preview, /data-codex-approval-surface/);
+  assert.match(preview, /role="dialog"/);
+  assert.match(preview, /data-preview-detail-composer="true"/);
+  assert.match(preview, /body\[data-state="settings"\] \.workspace \{ display: none; \}/);
+  assert.match(preview, /grid-template-rows: minmax\(0, 1fr\) auto/);
 });
