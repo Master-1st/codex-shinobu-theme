@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -85,13 +85,19 @@ test("PowerShell installer updates atomically and uninstall removes only theme f
       `$shell=New-Object -ComObject WScript.Shell; $shell.CreateShortcut('${escapePowerShell(shortcutPath)}').TargetPath`,
     ]);
     assert.equal(shortcutTarget.status, 0, shortcutTarget.stderr || shortcutTarget.stdout);
-    assert.equal(shortcutTarget.stdout.trim(), currentMirrorApp);
+    assert.equal(
+      realpathSync.native(shortcutTarget.stdout.trim()).toLowerCase(),
+      realpathSync.native(currentMirrorApp).toLowerCase(),
+    );
     const repairedStaleTarget = runPowerShell([
       "-Command",
       `$shell=New-Object -ComObject WScript.Shell; $shell.CreateShortcut('${escapePowerShell(startMenuShortcutPath)}').TargetPath`,
     ]);
     assert.equal(repairedStaleTarget.status, 0, repairedStaleTarget.stderr || repairedStaleTarget.stdout);
-    assert.equal(repairedStaleTarget.stdout.trim(), currentMirrorApp);
+    assert.equal(
+      realpathSync.native(repairedStaleTarget.stdout.trim()).toLowerCase(),
+      realpathSync.native(currentMirrorApp).toLowerCase(),
+    );
 
     const second = runPowerShell(["-File", join(projectRoot, "install.ps1")]);
     assert.equal(second.status, 0, second.stderr || second.stdout);

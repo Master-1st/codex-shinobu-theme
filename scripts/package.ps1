@@ -52,7 +52,20 @@ foreach ($file in $files) {
 }
 
 Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $zipPath -CompressionLevel Optimal
-$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLowerInvariant()
+$stream = [IO.File]::OpenRead($zipPath)
+try {
+  $sha256 = [Security.Cryptography.SHA256]::Create()
+  try {
+    $hashBytes = $sha256.ComputeHash($stream)
+  }
+  finally {
+    $sha256.Dispose()
+  }
+}
+finally {
+  $stream.Dispose()
+}
+$hash = ([BitConverter]::ToString($hashBytes)).Replace('-', '').ToLowerInvariant()
 $hashPath = "$zipPath.sha256"
 Set-Content -LiteralPath $hashPath -Value "$hash  $(Split-Path -Leaf $zipPath)" -Encoding ascii
 
