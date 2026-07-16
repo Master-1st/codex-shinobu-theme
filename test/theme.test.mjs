@@ -546,6 +546,7 @@ test("theme CSS scopes stable Codex surfaces and responsive fallbacks", async ()
   assert.match(css, /data-pip-obstacle="thread-footer"/);
   assert.doesNotMatch(css, /radial-gradient\(circle, #fff 0 1px/);
   assert.match(css, /\.app-header-tint[\s\S]*width: 100%/);
+  assert.match(css, /app-header-tint\[data-app-shell-header-edge-scroll\][\s\S]*width: clamp\(320px, 33\.333vw, 680px\)/);
   assert.match(css, /app-header-tint:has\(\[data-thread-title\]\)[\s\S]*margin: 8px 24px 6px auto/);
   assert.match(css, /--shinobu-rail-inline-start/);
   assert.match(css, /--shinobu-rail-inline-size/);
@@ -565,6 +566,7 @@ test("visual QA preview contains every supported state", async () => {
   assert.match(preview, /role="dialog"/);
   assert.match(preview, /data-preview-detail-composer="true"/);
   assert.match(preview, /window-toolbar app-header-tint/);
+  assert.match(preview, /data-app-shell-header-edge-scroll="true"/);
   assert.match(preview, /body\[data-state="settings"\] \.workspace \{ display: none; \}/);
   assert.match(preview, /grid-template-rows: minmax\(0, 1fr\) auto/);
 });

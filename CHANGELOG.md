@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3 — 2026-07-16
+
+- Targets Codex's real `data-app-shell-header-edge-scroll` task-header marker instead of relying only on a nested title element.
+- Keeps the task title bar right-aligned while reducing it to roughly one third of the viewport, capped at 680 px.
+- Preserves a compact 320 px title bar on narrow windows so the title and controls remain usable.
+
 ## 1.1.2 — 2026-07-16
 
 - Restores the application menu/title chrome to a full-width translucent bar.

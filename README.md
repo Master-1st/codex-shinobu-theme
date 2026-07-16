@@ -2,7 +2,7 @@
 
 给 Windows 版 Codex Desktop 使用的小忍主题：柠檬黄、薄荷绿、奶油粉配色，内置右侧人物安全区的 16:9 横版忍野忍背景，并支持在设置中换成任意本地 PNG、JPG 或 WebP。角色图铺在主界面底层，对话、回复、审批卡和输入框以半透明玻璃层叠在画面上方。
 
-`v1.1.2` 会在最大化、恢复窗口和侧栏展开后重新测量实际可见工作区：回复与输入框在侧栏之外保持居中，以更透明的玻璃层适度覆盖人物；应用菜单栏保持全长，任务标题栏单独靠右。空间不足时自动切换紧凑模式，不再出现缩小后左半边被裁掉的问题。
+`v1.1.3` 会在最大化、恢复窗口和侧栏展开后重新测量实际可见工作区：回复与输入框在侧栏之外保持居中，以更透明的玻璃层适度覆盖人物；应用菜单栏保持全长，任务标题栏只保留约三分之一屏宽并贴右摆放。空间不足时自动切换紧凑模式，不再出现缩小后左半边被裁掉的问题。
 
 ![Codex Shinobu Theme preview](assets/preview.png)
 
@@ -34,7 +34,7 @@ irm https://raw.githubusercontent.com/b-nnett/codex-plusplus/main/install.ps1 | 
 
 ### 2. 安装小忍主题
 
-1. 从本仓库的 Releases 下载 `codex-shinobu-theme-v1.1.2-windows.zip`。
+1. 从本仓库的 Releases 下载 `codex-shinobu-theme-v1.1.3-windows.zip`。
 2. 完整解压 ZIP。
 3. 双击 `install.cmd`。
 4. 从开始菜单或桌面启动 **Codex++** 快捷方式。

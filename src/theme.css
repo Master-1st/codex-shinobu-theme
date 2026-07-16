@@ -174,9 +174,10 @@ html[data-shinobu-theme="active"] .app-header-tint {
   backdrop-filter: blur(18px) saturate(1.06);
 }
 
+html[data-shinobu-theme="active"] .app-header-tint[data-app-shell-header-edge-scroll],
 html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"],
 html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
-  width: min(860px, var(--shinobu-primary-rail-inline-size, calc(100% - 48px)), calc(100% - 48px)) !important;
+  width: clamp(320px, 33.333vw, 680px) !important;
   max-width: calc(100% - 48px) !important;
   min-height: 44px;
   margin: 8px 24px 6px auto !important;
@@ -328,9 +329,10 @@ html[data-shinobu-theme="active"] .startup-loader__base {
 }
 
 @media (max-width: 799px) {
+  html[data-shinobu-theme="active"] .app-header-tint[data-app-shell-header-edge-scroll],
   html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"],
   html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
-    width: min(var(--shinobu-primary-rail-inline-size, calc(100% - 32px)), calc(100% - 32px)) !important;
+    width: min(320px, calc(100% - 32px)) !important;
     max-width: calc(100% - 32px) !important;
     margin: 8px 16px 6px auto !important;
   }

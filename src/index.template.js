@@ -149,7 +149,8 @@ function updateReadingRail() {
   const sidebars = visibleSidebars(viewportWidth);
   const sidebarRight = sidebars.reduce((right, item) => Math.max(right, Math.min(viewportWidth, item.rect.right)), 0);
   for (const header of document.querySelectorAll(".app-header-tint")) {
-    if (header.querySelector?.("[data-thread-title]")) {
+    if (header.hasAttribute?.("data-app-shell-header-edge-scroll") ||
+        header.querySelector?.("[data-thread-title], [data-thread-title-trigger]")) {
       header.setAttribute?.("data-shinobu-thread-header", "true");
     } else {
       header.removeAttribute?.("data-shinobu-thread-header");
@@ -213,8 +214,8 @@ function startLayoutTracking() {
       for (const record of records) {
         for (const node of record.addedNodes) {
           if (node?.nodeType !== 1) continue;
-          if (node.matches?.(".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface") ||
-              node.querySelector?.(".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface")) {
+          if (node.matches?.(".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface, .app-header-tint, [data-thread-title], [data-thread-title-trigger], [data-app-shell-header-edge-scroll]") ||
+              node.querySelector?.(".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface, .app-header-tint, [data-thread-title], [data-thread-title-trigger], [data-app-shell-header-edge-scroll]")) {
             scheduleReadingRailUpdate();
             return;
           }
