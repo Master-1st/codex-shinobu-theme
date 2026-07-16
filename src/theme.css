@@ -19,7 +19,6 @@ html[data-shinobu-theme="active"] {
   --shinobu-art-image: var(--shinobu-default-art);
   --shinobu-art-fit: cover;
   --shinobu-art-position: center center;
-  --shinobu-gallery-reserve: clamp(450px, 40vw, 680px);
   --corner-radius-scale: 1.45 !important;
   --startup-background: #f4e96f !important;
   --startup-logo-shimmer-base: #79bd98 !important;
@@ -93,6 +92,7 @@ html[data-shinobu-theme="active"] #root {
   background:
     radial-gradient(circle, #fff 0 1px, transparent 1.7px) 0 0 / 42px 42px,
     radial-gradient(circle at 13% 84%, #dc82982b, transparent 31%),
+    linear-gradient(90deg, #f7ed73f2 0 20%, #fff5a052 20% 100%),
     linear-gradient(135deg, #f7ed73 0%, #fff5a0 47%, #cfead9 100%) !important;
 }
 
@@ -122,11 +122,25 @@ html[data-shinobu-theme="active"] .browser-main-surface {
   position: relative;
   min-height: 100%;
   overflow: hidden;
+  isolation: isolate;
   color: var(--shinobu-ink) !important;
-  background:
-    radial-gradient(circle at 88% 13%, #fff9dc91, transparent 26%),
+  background-color: var(--shinobu-yellow) !important;
+  background-image:
+    linear-gradient(90deg, #fffdf2f0 0%, #fffdf2d9 38%, #fff5a878 66%, #dff1e62f 100%),
     radial-gradient(circle at 18% 82%, #dff1e68c, transparent 34%),
-    linear-gradient(135deg, #fffdf2 0%, #fffbe2 52%, #e5f2e9 100%) !important;
+    var(--shinobu-art-image),
+    linear-gradient(135deg, #fffdf2 0%, #fff5a8 52%, #dff1e6 100%) !important;
+  background-position:
+    center,
+    center,
+    var(--shinobu-art-position),
+    center !important;
+  background-size:
+    cover,
+    cover,
+    var(--shinobu-art-fit),
+    cover !important;
+  background-repeat: no-repeat !important;
   border: 1px solid #79bd9875 !important;
   border-radius: 20px 0 0 0 !important;
   box-shadow: inset 0 0 0 1px #fff9, 0 10px 34px #6d765233 !important;
@@ -153,6 +167,7 @@ html[data-shinobu-theme="active"] [data-thread-title] {
 }
 
 html[data-shinobu-theme="active"] .thread-scroll-container {
+  background: transparent !important;
   transition: padding-right 180ms ease-out;
 }
 
@@ -182,7 +197,7 @@ html[data-shinobu-theme="active"] [data-local-conversation-final-assistant] {
   color: var(--shinobu-ink) !important;
   border: 1px solid #79bd986b;
   border-radius: 18px;
-  background: #fffdf2f0;
+  background: #fffdf2d9;
   box-shadow: 0 10px 22px #6d765229;
   backdrop-filter: blur(14px) saturate(1.06);
 }
@@ -259,44 +274,6 @@ html[data-shinobu-theme="active"] .startup-loader__base {
   filter: drop-shadow(0 0 16px #dc829866);
 }
 
-/* Wide chat layout: the real thread canvas is narrowed before the artwork is drawn. */
-@media (min-width: 1180px) {
-  html[data-shinobu-theme="active"][data-shinobu-artwork="on"]
-    .main-surface:has(.thread-scroll-container) .thread-scroll-container,
-  html[data-shinobu-theme="active"][data-shinobu-artwork="on"]
-    .browser-main-surface:has(.thread-scroll-container) .thread-scroll-container {
-    box-sizing: border-box;
-    padding-right: var(--shinobu-gallery-reserve) !important;
-  }
-
-  html[data-shinobu-theme="active"][data-shinobu-artwork="on"]
-    body:has(.main-surface .thread-scroll-container)::before,
-  html[data-shinobu-theme="active"][data-shinobu-artwork="on"]
-    body:has(.browser-main-surface .thread-scroll-container)::before {
-    position: fixed;
-    top: 70px;
-    right: 0;
-    bottom: 0;
-    z-index: 8;
-    width: var(--shinobu-gallery-reserve);
-    box-sizing: border-box;
-    pointer-events: none;
-    content: "";
-    border: 0;
-    border-left: 1px solid #79bd988c;
-    background-color: var(--shinobu-yellow);
-    background-image:
-      linear-gradient(90deg, #fffdf2d4 0%, #fffdf24a 7%, transparent 16%),
-      var(--shinobu-art-image);
-    background-position: center, var(--shinobu-art-position);
-    background-size: auto, var(--shinobu-art-fit);
-    background-repeat: no-repeat, no-repeat;
-    box-shadow:
-      -20px 0 46px #66785a32,
-      -1px 0 0 #fff9 inset;
-  }
-}
-
 @media (max-width: 1179px) {
   html[data-shinobu-theme="active"] .thread-scroll-container {
     padding-right: 0 !important;
@@ -307,7 +284,13 @@ html[data-shinobu-theme="active"] .startup-loader__base {
   html[data-shinobu-theme="active"] .main-surface,
   html[data-shinobu-theme="active"] .browser-main-surface {
     border-radius: 0 !important;
-    background: linear-gradient(145deg, #fffdf2, #e2f3e9) !important;
+    background-image:
+      linear-gradient(145deg, #fffdf2e8, #e2f3e9bd),
+      var(--shinobu-art-image),
+      linear-gradient(145deg, #fffdf2, #e2f3e9) !important;
+    background-position: center, var(--shinobu-art-position), center !important;
+    background-size: cover, var(--shinobu-art-fit), cover !important;
+    background-repeat: no-repeat !important;
   }
 }
 

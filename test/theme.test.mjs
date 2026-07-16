@@ -1,10 +1,46 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { promisify } from "node:util";
 import vm from "node:vm";
 
 const root = new URL("../", import.meta.url);
+const execFileAsync = promisify(execFile);
+
+test("Windows optimizer analyzes a disposable profile without changing it", { skip: process.platform !== "win32" }, async () => {
+  const tempRoot = await mkdtemp(join(tmpdir(), "codex-shinobu-optimizer-"));
+  const codexHome = join(tempRoot, ".codex");
+  const webProfile = join(tempRoot, "web", "Codex");
+  const logDb = join(codexHome, "logs_2.sqlite");
+  const cacheFile = join(webProfile, "Default", "Cache", "data.bin");
+  try {
+    await mkdir(join(codexHome, "sessions", "2026", "07", "16"), { recursive: true });
+    await mkdir(join(webProfile, "Default", "Cache"), { recursive: true });
+    await writeFile(logDb, Buffer.alloc(1024 * 1024));
+    await writeFile(cacheFile, Buffer.alloc(256 * 1024));
+    await writeFile(join(codexHome, "sessions", "2026", "07", "16", "rollout-test.jsonl"), "{}\n");
+
+    const scriptPath = new URL("../tools/Optimize-Codex.ps1", import.meta.url).pathname.replace(/^\/(.:)/, "$1");
+    const { stdout } = await execFileAsync("powershell.exe", [
+      "-NoProfile",
+      "-ExecutionPolicy", "Bypass",
+      "-File", scriptPath,
+      "-Mode", "Analyze",
+      "-CodexHome", codexHome,
+      "-WebProfile", webProfile,
+    ]);
+
+    assert.match(stdout, /Read-only analysis completed/);
+    assert.match(stdout, /ActiveLogDatabaseMB\s*:\s*1/);
+    assert.equal((await readFile(logDb)).length, 1024 * 1024);
+    assert.equal((await readFile(cacheFile)).length, 256 * 1024);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
 
 test("manifest is a valid renderer tweak with an existing entry", async () => {
   const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -90,6 +126,38 @@ test("renderer lifecycle installs and removes one scoped style", async () => {
   assert.equal(properties.has("--shinobu-art-fit"), false);
 });
 
+test("avatar overlay renderer is left untouched", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const appended = [];
+  const document = {
+    documentElement: {
+      style: { setProperty() {}, removeProperty() {} },
+      setAttribute() {},
+      removeAttribute() {},
+    },
+    head: { appendChild: (element) => appended.push(element) },
+    createElement: () => ({ dataset: {}, style: {}, remove() {} }),
+  };
+  const module = { exports: {} };
+  vm.runInNewContext(source, {
+    module,
+    exports: module.exports,
+    document,
+    location: { href: "app://-/index.html?initialRoute=%2Favatar-overlay" },
+    decodeURIComponent,
+    console,
+  });
+
+  const logs = [];
+  await module.exports.start({
+    process: "renderer",
+    log: { info: (...args) => logs.push(args) },
+  });
+
+  assert.equal(appended.length, 0);
+  assert.match(logs.flat().join(" "), /skipped in auxiliary renderer/);
+});
+
 test("theme CSS scopes stable Codex surfaces and responsive fallbacks", async () => {
   const css = await readFile(new URL("../dist/theme.css", import.meta.url), "utf8");
   for (const selector of [
@@ -105,6 +173,6 @@ test("theme CSS scopes stable Codex surfaces and responsive fallbacks", async ()
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /var\(--shinobu-art-image\)/);
   assert.match(css, /thread-scroll-container/);
-  assert.match(css, /padding-right: var\(--shinobu-gallery-reserve\)/);
-  assert.match(css, /body:has\(\.main-surface \.thread-scroll-container\)::before/);
+  assert.match(css, /background-image:[\s\S]*var\(--shinobu-art-image\)/);
+  assert.doesNotMatch(css, /shinobu-gallery-reserve/);
 });

@@ -18,6 +18,15 @@ function rootElement() {
   return document.documentElement;
 }
 
+function isAuxiliaryRendererWindow() {
+  if (typeof location === "undefined") return false;
+  let href = String(location.href || "");
+  try {
+    href = decodeURIComponent(href);
+  } catch {}
+  return /[?&]initialRoute=\/?avatar-overlay(?:[&#]|$)/i.test(href);
+}
+
 function removeThemeState() {
   const root = rootElement();
   root.removeAttribute("data-shinobu-theme");
@@ -205,7 +214,7 @@ async function renderSettings(container, api) {
   title.textContent = "小忍主题外观";
   const subtitle = document.createElement("div");
   subtitle.className = "text-token-text-secondary text-sm";
-  subtitle.textContent = "蜜金与深紫配色；原版图片只保存在你的本机。";
+  subtitle.textContent = "柠檬黄、薄荷绿与暖粉配色；原版图片只保存在你的本机。";
   heading.append(title, subtitle);
 
   const card = document.createElement("div");
@@ -234,7 +243,7 @@ async function renderSettings(container, api) {
   const fitSelect = selectControl(
     api.storage.get("artworkFit", "cover"),
     [
-      { value: "cover", label: "铺满右侧背景（推荐）" },
+      { value: "cover", label: "铺满主界面背景（推荐）" },
       { value: "contain", label: "完整显示" },
     ],
     (value) => {
@@ -242,7 +251,7 @@ async function renderSettings(container, api) {
       applyThemeState(api);
     },
   );
-  card.appendChild(settingRow("图片显示方式", "默认铺满右侧背景；完整显示会保留图片全部边缘。", fitSelect));
+  card.appendChild(settingRow("图片显示方式", "默认铺满主界面背景；完整显示会保留图片全部边缘。", fitSelect));
 
   const positionSelect = selectControl(
     api.storage.get("artworkPosition", "right"),
@@ -312,6 +321,10 @@ async function renderSettings(container, api) {
 module.exports = {
   async start(api) {
     if (api.process !== "renderer") return;
+    if (isAuxiliaryRendererWindow()) {
+      api.log.info("Shinobu theme skipped in auxiliary renderer");
+      return;
+    }
     activeApi = api;
     styleElement?.remove();
     styleElement = document.createElement("style");

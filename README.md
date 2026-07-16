@@ -1,10 +1,10 @@
 # Codex Shinobu Theme（Windows）
 
-给 Windows 版 Codex Desktop 使用的小忍主题：柠檬黄、薄荷绿、奶油粉配色，内置根据你指定图片重新构图的竖版忍野忍背景，并支持在设置中换成任意本地 PNG、JPG 或 WebP。宽屏下聊天区与右侧全高背景分列显示，对话、回复和输入框不会盖住角色画面。
+给 Windows 版 Codex Desktop 使用的小忍主题：柠檬黄、薄荷绿、奶油粉配色，内置根据你指定图片重新构图的竖版忍野忍背景，并支持在设置中换成任意本地 PNG、JPG 或 WebP。角色图铺在主界面底层，对话、回复、审批卡和输入框以半透明玻璃层叠在画面上方。
 
 ![Codex Shinobu Theme preview](assets/preview.png)
 
-背景配色、聊天区与角色画廊的布局逻辑见 [主题配色与背景设计](docs/THEME-DESIGN.md)。
+背景配色、聊天区与角色画廊的布局逻辑见 [主题配色与背景设计](docs/THEME-DESIGN.md)。仓库还附带独立的 [Codex Windows 优化器](docs/CODEX-WINDOWS-OPTIMIZER.md)，用于安全轮换过大的诊断日志并清理可再生缓存。
 
 > 非官方同人项目，与 OpenAI、《物语》系列及其权利方无关联。代码使用 MIT License；角色与图片权利不包含在 MIT 授权内，详见 [NOTICE.md](NOTICE.md)。
 
@@ -45,6 +45,24 @@ irm https://raw.githubusercontent.com/b-nnett/codex-plusplus/main/install.ps1 | 
 
 更新主题时再次运行 `install.cmd` 即可；旧主题代码会自动备份，自定义图片数据不会被覆盖。
 
+## Codex 窗口卡顿优化
+
+如果 Codex 长时间运行后打开窗口或切换大型任务明显变慢，可双击：
+
+```text
+Optimize-Codex.cmd
+```
+
+工具会先显示内存与数据占用，再关闭 Codex、备份并轮换超过 128 MB 的诊断日志库、清理 Chromium/GPU 可再生缓存，最后重新启动。它不会删除登录、任务、附件、技能、设置或自定义图片，也不会修改 Codex 程序文件。
+
+只想检查而不更改时，在 PowerShell 运行：
+
+```powershell
+.\tools\Optimize-Codex.ps1 -Mode Analyze
+```
+
+详细安全边界和恢复方法见 [Codex Windows 优化器说明](docs/CODEX-WINDOWS-OPTIMIZER.md)。
+
 ## 使用你自己的原版图片
 
 打开：
@@ -57,7 +75,7 @@ irm https://raw.githubusercontent.com/b-nnett/codex-plusplus/main/install.ps1 | 
 
 - 开关角色主视觉；
 - 开关轻微动效；
-- 切换“铺满右侧背景 / 完整显示”；
+- 切换“铺满主界面背景 / 完整显示”；
 - 设置角色靠左、居中或靠右；
 - 一键恢复仓库内置图片。
 
