@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.4 — 2026-07-16
+
+- Restores Codex's fixed positioning for the compact task header instead of leaving the native top offset on a relative element.
+- Removes the duplicated header flow height that created a large empty strip above the conversation.
+- Pins the 44 px task header 24 px from the right edge, with a 16 px safe margin on narrow windows.
+
 ## 1.1.3 — 2026-07-16
 
 - Targets Codex's real `data-app-shell-header-edge-scroll` task-header marker instead of relying only on a nested title element.

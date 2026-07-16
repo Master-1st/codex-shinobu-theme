@@ -177,10 +177,15 @@ html[data-shinobu-theme="active"] .app-header-tint {
 html[data-shinobu-theme="active"] .app-header-tint[data-app-shell-header-edge-scroll],
 html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"],
 html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
+  position: fixed !important;
+  right: 24px !important;
+  left: auto !important;
   width: clamp(320px, 33.333vw, 680px) !important;
   max-width: calc(100% - 48px) !important;
-  min-height: 44px;
-  margin: 8px 24px 6px auto !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  margin: 8px 0 0 !important;
   padding: 0 16px !important;
   background: linear-gradient(105deg, color-mix(in srgb, var(--shinobu-cream) 72%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 64%, transparent) 68%, color-mix(in srgb, var(--shinobu-yellow-soft) 58%, transparent)) !important;
   border: 1px solid color-mix(in srgb, var(--shinobu-mint) 42%, transparent) !important;
@@ -332,9 +337,10 @@ html[data-shinobu-theme="active"] .startup-loader__base {
   html[data-shinobu-theme="active"] .app-header-tint[data-app-shell-header-edge-scroll],
   html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"],
   html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
+    right: 16px !important;
     width: min(320px, calc(100% - 32px)) !important;
     max-width: calc(100% - 32px) !important;
-    margin: 8px 16px 6px auto !important;
+    margin: 8px 0 0 !important;
   }
 
   html[data-shinobu-theme="active"] .thread-scroll-container [data-mcp-app-portal-target="true"],

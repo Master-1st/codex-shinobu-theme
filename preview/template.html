@@ -19,9 +19,10 @@
       .side-row { padding: 10px 12px; margin: 3px 0; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
       .main-surface { display: grid; grid-template-rows: 58px 1fr; min-width: 0; overflow: hidden; }
       .app-header-tint { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+      .main-surface > .app-header-tint[data-app-shell-header-edge-scroll] { top: 52px; }
       .header-actions { display: flex; gap: 8px; }
       .header-actions button { color: var(--shinobu-muted); background: color-mix(in srgb, var(--shinobu-cream) 72%, transparent); border: 1px solid color-mix(in srgb, var(--shinobu-mint) 32%, transparent); border-radius: 9px; padding: 7px 10px; }
-      .workspace { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+      .workspace { display: grid; grid-row: 2; grid-template-columns: minmax(0, 1fr); min-height: 0; }
       .thread-scroll-container { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; overflow: hidden; }
       .conversation { width: min(860px, calc(100% - 48px), 32vw); max-width: min(860px, calc(100% - 48px), 32vw); min-height: 0; margin: 0 auto 0 24px; padding: 42px 0 24px; overflow: auto; }
       [data-user-message-bubble] { width: fit-content; max-width: 70%; margin-left: auto; padding: 12px 15px; }
@@ -107,7 +108,7 @@
           <div class="side-row" data-app-action-sidebar-thread-row>打包 GitHub Release</div>
         </aside>
         <main class="main-surface">
-          <header class="app-header-tint" data-app-shell-header-edge-scroll="true">
+          <header class="app-header-tint fixed top-toolbar-sm right-0" data-app-shell-header-edge-scroll="true">
             <div data-thread-title>制作 Windows 小忍主题</div>
             <div class="header-actions menu-trigger"><button>打开</button><button>•••</button></div>
           </header>
