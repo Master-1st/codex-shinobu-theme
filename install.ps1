@@ -83,6 +83,30 @@ finally {
 
 $repairedShortcuts = @()
 try {
+  $latestCodexPlusPlusApp = $null
+  $storeAppsRoot = $null
+  if (-not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+    $storeAppsRoot = Join-Path $env:LOCALAPPDATA 'codex-plusplus\store-apps'
+    if (Test-Path -LiteralPath $storeAppsRoot) {
+      $appCandidates = @(
+        Get-ChildItem -LiteralPath $storeAppsRoot -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+          if ($_.Name -notmatch '^OpenAI\.Codex_(\d+\.\d+\.\d+\.\d+)_') {
+            return
+          }
+          $candidate = Join-Path $_.FullName 'app\ChatGPT.exe'
+          if (Test-Path -LiteralPath $candidate) {
+            [pscustomobject]@{
+              Version = [version]$Matches[1]
+              LastWriteTime = $_.LastWriteTime
+              Target = $candidate
+            }
+          }
+        } | Sort-Object Version, LastWriteTime -Descending
+      )
+      $latestCodexPlusPlusApp = $appCandidates | Select-Object -First 1 -ExpandProperty Target
+    }
+  }
+
   $shortcutPaths = @(
     (Join-Path $env:USERPROFILE 'Desktop\Codex++.lnk'),
     (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Codex++.lnk')
@@ -93,11 +117,36 @@ try {
       continue
     }
     $shortcut = $shell.CreateShortcut($shortcutPath)
-    if ([IO.Path]::GetFileName($shortcut.TargetPath) -ine 'Codex.exe') {
+    $targetName = [IO.Path]::GetFileName($shortcut.TargetPath)
+    $actualApp = $null
+    if ($targetName -ieq 'Codex.exe') {
+      $siblingApp = Join-Path ([IO.Path]::GetDirectoryName($shortcut.TargetPath)) 'ChatGPT.exe'
+      if (Test-Path -LiteralPath $siblingApp) {
+        $actualApp = $siblingApp
+      }
+      elseif ($latestCodexPlusPlusApp) {
+        $actualApp = $latestCodexPlusPlusApp
+      }
+    }
+    elseif ($targetName -ieq 'ChatGPT.exe') {
+      $targetInsideCurrentMirror = $false
+      if ($storeAppsRoot) {
+        try {
+          $normalizedTarget = [IO.Path]::GetFullPath($shortcut.TargetPath)
+          $normalizedStoreRoot = [IO.Path]::GetFullPath($storeAppsRoot).TrimEnd('\') + '\'
+          $targetInsideCurrentMirror = $normalizedTarget.StartsWith($normalizedStoreRoot, [StringComparison]::OrdinalIgnoreCase)
+        }
+        catch {}
+      }
+      if ($targetInsideCurrentMirror -and (Test-Path -LiteralPath $shortcut.TargetPath)) {
+        continue
+      }
+      $actualApp = $latestCodexPlusPlusApp
+    }
+    else {
       continue
     }
-    $actualApp = Join-Path ([IO.Path]::GetDirectoryName($shortcut.TargetPath)) 'ChatGPT.exe'
-    if (-not (Test-Path -LiteralPath $actualApp)) {
+    if (-not $actualApp -or -not (Test-Path -LiteralPath $actualApp)) {
       continue
     }
     $shortcut.TargetPath = $actualApp

@@ -18,15 +18,26 @@ test("PowerShell installer updates atomically and uninstall removes only theme f
   const destination = join(codexPlusPlus, "tweaks", manifest.id);
   const backups = join(codexPlusPlus, "theme-backups");
   const fakeApp = join(appData, "patched-app");
+  const localAppData = join(appData, "Local");
   const desktop = join(appData, "Desktop");
   const shortcutPath = join(desktop, "Codex++.lnk");
+  const startMenu = join(appData, "Microsoft", "Windows", "Start Menu", "Programs");
+  const startMenuShortcutPath = join(startMenu, "Codex++.lnk");
   const launcher = join(fakeApp, "Codex.exe");
   const actualApp = join(fakeApp, "ChatGPT.exe");
+  const currentMirror = join(localAppData, "codex-plusplus", "store-apps", "OpenAI.Codex_99.1.2.3_x64__test", "app");
+  const currentMirrorApp = join(currentMirror, "ChatGPT.exe");
+  const staleApp = join(appData, "missing-profile", "app", "ChatGPT.exe");
   mkdirSync(codexPlusPlus, { recursive: true });
   mkdirSync(fakeApp, { recursive: true });
   mkdirSync(desktop, { recursive: true });
+  mkdirSync(startMenu, { recursive: true });
+  mkdirSync(currentMirror, { recursive: true });
+  mkdirSync(dirname(staleApp), { recursive: true });
   writeFileSync(launcher, "");
   writeFileSync(actualApp, "");
+  writeFileSync(currentMirrorApp, "");
+  writeFileSync(staleApp, "");
 
   const runPowerShell = (args) => spawnSync(
     "powershell.exe",
@@ -34,7 +45,7 @@ test("PowerShell installer updates atomically and uninstall removes only theme f
     {
       cwd: projectRoot,
       encoding: "utf8",
-      env: { ...process.env, APPDATA: appData, USERPROFILE: appData },
+      env: { ...process.env, APPDATA: appData, LOCALAPPDATA: localAppData, USERPROFILE: appData },
     },
   );
 
@@ -42,7 +53,9 @@ test("PowerShell installer updates atomically and uninstall removes only theme f
     const escapePowerShell = (value) => value.replaceAll("'", "''");
     const createShortcut = runPowerShell([
       "-Command",
-      `$shell=New-Object -ComObject WScript.Shell; $shortcut=$shell.CreateShortcut('${escapePowerShell(shortcutPath)}'); $shortcut.TargetPath='${escapePowerShell(launcher)}'; $shortcut.WorkingDirectory='${escapePowerShell(fakeApp)}'; $shortcut.Save()`,
+      `$shell=New-Object -ComObject WScript.Shell; ` +
+      `$shortcut=$shell.CreateShortcut('${escapePowerShell(shortcutPath)}'); $shortcut.TargetPath='${escapePowerShell(launcher)}'; $shortcut.WorkingDirectory='${escapePowerShell(fakeApp)}'; $shortcut.Save(); ` +
+      `$stale=$shell.CreateShortcut('${escapePowerShell(startMenuShortcutPath)}'); $stale.TargetPath='${escapePowerShell(staleApp)}'; $stale.Save()`,
     ]);
     assert.equal(createShortcut.status, 0, createShortcut.stderr || createShortcut.stdout);
 
@@ -56,6 +69,12 @@ test("PowerShell installer updates atomically and uninstall removes only theme f
     ]);
     assert.equal(shortcutTarget.status, 0, shortcutTarget.stderr || shortcutTarget.stdout);
     assert.equal(shortcutTarget.stdout.trim(), actualApp);
+    const repairedStaleTarget = runPowerShell([
+      "-Command",
+      `$shell=New-Object -ComObject WScript.Shell; $shell.CreateShortcut('${escapePowerShell(startMenuShortcutPath)}').TargetPath`,
+    ]);
+    assert.equal(repairedStaleTarget.status, 0, repairedStaleTarget.stderr || repairedStaleTarget.stdout);
+    assert.equal(repairedStaleTarget.stdout.trim(), currentMirrorApp);
 
     const second = runPowerShell(["-File", join(projectRoot, "install.ps1")]);
     assert.equal(second.status, 0, second.stderr || second.stdout);

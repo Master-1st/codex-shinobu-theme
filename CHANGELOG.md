@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1 — 2026-07-16
+
+- Fixes restored/smaller Codex windows where the expanded sidebar overlays the work area and clips the left side of replies.
+- Measures the visible sidebar and thread rectangles at runtime, then keeps conversations and composers on one aligned reading rail outside the overlap.
+- Adds a compact fallback with a stronger readability veil when the character-safe rail becomes too narrow.
+- Recalculates after window resize, relevant surface mounts, and sidebar transitions without polling or touching the avatar overlay.
+- Repairs stale Codex++ shortcuts whose `ChatGPT.exe` target points to a removed user profile or app mirror.
+- Removes the extra white-dot overlay, switches the built-in artwork to seamless `cover` rendering, and keeps `contain` available for complete originals.
+- Replaces the full-width white task header with a compact glass title bar aligned to the reading rail.
+- Expands automated coverage to 16 tests and adds a restored-window overlay-sidebar visual QA state.
+
 ## 1.1.0 — 2026-07-16
 
 - Replaces the portrait background with a 16:9 safe-area illustration and moves the artwork to one continuous root-canvas layer.

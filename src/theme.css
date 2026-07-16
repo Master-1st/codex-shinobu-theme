@@ -19,7 +19,7 @@ html[data-shinobu-theme="active"] {
   --shinobu-link: #387654;
   --shinobu-default-art: url("__SHINOBU_HERO_DATA_URI__");
   --shinobu-art-image: var(--shinobu-default-art);
-  --shinobu-art-fit: contain;
+  --shinobu-art-fit: cover;
   --shinobu-art-position: center right;
   --corner-radius-scale: 1.45 !important;
   --startup-background: var(--shinobu-yellow) !important;
@@ -93,14 +93,13 @@ html[data-shinobu-theme="active"] #root {
   color: var(--shinobu-ink) !important;
   background-color: var(--shinobu-yellow) !important;
   background-image:
-    radial-gradient(circle, #fff 0 1px, transparent 1.7px),
     linear-gradient(90deg, color-mix(in srgb, var(--shinobu-cream) 92%, transparent) 0%, color-mix(in srgb, var(--shinobu-cream) 68%, transparent) 36%, color-mix(in srgb, var(--shinobu-yellow-soft) 16%, transparent) 50%, transparent 58%),
     radial-gradient(circle at 13% 84%, color-mix(in srgb, var(--shinobu-blush) 18%, transparent), transparent 31%),
     var(--shinobu-art-image),
     linear-gradient(135deg, var(--shinobu-yellow) 0%, var(--shinobu-yellow-soft) 47%, var(--shinobu-mint-soft) 100%) !important;
-  background-position: 0 0, center, center, var(--shinobu-art-position), center !important;
-  background-size: 42px 42px, cover, cover, var(--shinobu-art-fit), cover !important;
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat !important;
+  background-position: center, center, var(--shinobu-art-position), center !important;
+  background-size: cover, cover, var(--shinobu-art-fit), cover !important;
+  background-repeat: no-repeat !important;
 }
 
 html[data-shinobu-theme="active"] .app-shell-left-panel {
@@ -150,13 +149,28 @@ html[data-shinobu-theme="active"] .browser-main-surface {
   box-shadow: inset 0 0 0 1px #fff9, 0 10px 34px #6d765233 !important;
 }
 
+html[data-shinobu-theme="active"][data-shinobu-layout="compact"] .main-surface,
+html[data-shinobu-theme="active"][data-shinobu-layout="compact"] .browser-main-surface {
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--shinobu-cream) 98%, transparent) 0%, color-mix(in srgb, var(--shinobu-cream) 91%, transparent) 68%, color-mix(in srgb, var(--shinobu-yellow-soft) 36%, transparent) 100%),
+    radial-gradient(circle at 18% 82%, color-mix(in srgb, var(--shinobu-mint-soft) 66%, transparent), transparent 38%) !important;
+}
+
 html[data-shinobu-theme="active"] .app-header-tint {
   position: relative;
   z-index: 12;
+  box-sizing: border-box;
+  width: min(860px, var(--shinobu-primary-rail-inline-size, calc(56vw - 48px))) !important;
+  max-width: calc(100% - 32px) !important;
+  min-height: 44px;
+  margin: 8px 0 6px var(--shinobu-primary-rail-inline-start, 24px) !important;
+  padding: 0 16px !important;
   color: var(--shinobu-ink) !important;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--shinobu-cream) 96%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 94%, transparent) 65%, color-mix(in srgb, var(--shinobu-blush) 18%, var(--shinobu-cream))) !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--shinobu-mint) 40%, transparent) !important;
-  backdrop-filter: blur(18px) saturate(1.08);
+  background: linear-gradient(105deg, color-mix(in srgb, var(--shinobu-cream) 88%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 80%, transparent) 68%, color-mix(in srgb, var(--shinobu-yellow-soft) 70%, transparent)) !important;
+  border: 1px solid color-mix(in srgb, var(--shinobu-mint) 42%, transparent) !important;
+  border-radius: 15px !important;
+  box-shadow: inset 0 1px #fffc, 0 8px 22px #6d765224 !important;
+  backdrop-filter: blur(20px) saturate(1.08);
 }
 
 html[data-shinobu-theme="active"] .app-header-divider {
@@ -178,17 +192,19 @@ html[data-shinobu-theme="active"] .thread-scroll-container {
    wide enough for a reading rail. The background remains one continuous layer. */
 @media (min-width: 800px) {
   html[data-shinobu-theme="active"] .thread-scroll-container [data-mcp-app-portal-target="true"] {
-    width: min(860px, calc(100% - 48px), 32vw) !important;
-    max-width: min(860px, calc(100% - 48px), 32vw) !important;
+    box-sizing: border-box;
+    width: min(860px, calc(100% - 48px), var(--shinobu-rail-inline-size, var(--shinobu-primary-rail-inline-size, 32vw))) !important;
+    max-width: min(860px, calc(100% - 48px), var(--shinobu-rail-inline-size, var(--shinobu-primary-rail-inline-size, 32vw))) !important;
     margin-right: auto !important;
-    margin-left: 24px !important;
+    margin-left: var(--shinobu-rail-inline-start, var(--shinobu-primary-rail-inline-start, 24px)) !important;
   }
 
   html[data-shinobu-theme="active"] [data-thread-scroll-footer="true"] [data-pip-obstacle="thread-footer"] {
-    width: min(880px, calc(100% - 48px), 32vw) !important;
-    max-width: min(880px, calc(100% - 48px), 32vw) !important;
+    box-sizing: border-box;
+    width: min(860px, calc(100% - 48px), var(--shinobu-rail-inline-size, var(--shinobu-primary-rail-inline-size, 32vw))) !important;
+    max-width: min(860px, calc(100% - 48px), var(--shinobu-rail-inline-size, var(--shinobu-primary-rail-inline-size, 32vw))) !important;
     margin-right: auto !important;
-    margin-left: 24px !important;
+    margin-left: var(--shinobu-rail-inline-start, var(--shinobu-primary-rail-inline-start, 24px)) !important;
   }
 }
 
@@ -296,6 +312,20 @@ html[data-shinobu-theme="active"] .startup-loader__base {
 }
 
 @media (max-width: 799px) {
+  html[data-shinobu-theme="active"] .app-header-tint {
+    width: var(--shinobu-primary-rail-inline-size, calc(100% - 32px)) !important;
+    margin-left: var(--shinobu-primary-rail-inline-start, 16px) !important;
+  }
+
+  html[data-shinobu-theme="active"] .thread-scroll-container [data-mcp-app-portal-target="true"],
+  html[data-shinobu-theme="active"] [data-thread-scroll-footer="true"] [data-pip-obstacle="thread-footer"] {
+    box-sizing: border-box;
+    width: min(860px, var(--shinobu-rail-inline-size, var(--shinobu-primary-rail-inline-size, calc(100% - 32px)))) !important;
+    max-width: min(860px, var(--shinobu-rail-inline-size, var(--shinobu-primary-rail-inline-size, calc(100% - 32px)))) !important;
+    margin-right: auto !important;
+    margin-left: var(--shinobu-rail-inline-start, var(--shinobu-primary-rail-inline-start, 16px)) !important;
+  }
+
   html[data-shinobu-theme="active"] .main-surface,
   html[data-shinobu-theme="active"] .browser-main-surface {
     border-radius: 0 !important;

@@ -29,6 +29,19 @@ const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 let styleElement = null;
 let activeApi = null;
 let artworkRecord = null;
+let layoutResizeObserver = null;
+let layoutMutationObserver = null;
+let observedLayoutElements = null;
+let layoutFrameId = null;
+let layoutTimeoutIds = [];
+
+const READING_RAIL = Object.freeze({
+  safeRightRatio: 0.56,
+  gap: 24,
+  compactGap: 16,
+  minimumSafeWidth: 360,
+  maximumWidth: 860,
+});
 
 function rootElement() {
   return document.documentElement;
@@ -45,6 +58,204 @@ function isAuxiliaryRendererWindow() {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function finiteNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function calculateReadingRail({ viewportWidth, threadLeft, threadRight, sidebarRight = 0 }) {
+  const viewport = Math.max(1, finiteNumber(viewportWidth, 1));
+  const leftEdge = clamp(finiteNumber(threadLeft), 0, viewport);
+  const rightEdge = clamp(finiteNumber(threadRight, viewport), leftEdge, viewport);
+  const visibleSidebarRight = clamp(finiteNumber(sidebarRight), 0, viewport);
+  const safeStart = Math.max(leftEdge + READING_RAIL.gap, visibleSidebarRight + READING_RAIL.gap);
+  const safeRight = Math.min(rightEdge - READING_RAIL.gap, viewport * READING_RAIL.safeRightRatio);
+  const safeWidth = safeRight - safeStart;
+
+  if (safeWidth >= READING_RAIL.minimumSafeWidth) {
+    const width = Math.min(READING_RAIL.maximumWidth, safeWidth);
+    return {
+      mode: "rail",
+      left: Math.max(READING_RAIL.gap, safeStart - leftEdge),
+      width,
+      absoluteLeft: safeStart,
+      absoluteRight: safeStart + width,
+    };
+  }
+
+  const compactStart = Math.max(
+    leftEdge + READING_RAIL.compactGap,
+    visibleSidebarRight + READING_RAIL.compactGap,
+  );
+  const compactRight = Math.max(compactStart, rightEdge - READING_RAIL.compactGap);
+  return {
+    mode: "compact",
+    left: Math.max(READING_RAIL.compactGap, compactStart - leftEdge),
+    width: Math.max(0, compactRight - compactStart),
+    absoluteLeft: compactStart,
+    absoluteRight: compactRight,
+  };
+}
+
+function elementRect(element) {
+  if (!element || typeof element.getBoundingClientRect !== "function") return null;
+  const rect = element.getBoundingClientRect();
+  const left = finiteNumber(rect.left);
+  const right = finiteNumber(rect.right, left + finiteNumber(rect.width));
+  const top = finiteNumber(rect.top);
+  const bottom = finiteNumber(rect.bottom, top + finiteNumber(rect.height));
+  return {
+    left,
+    right,
+    top,
+    bottom,
+    width: Math.max(0, finiteNumber(rect.width, right - left)),
+    height: Math.max(0, finiteNumber(rect.height, bottom - top)),
+  };
+}
+
+function visibleSidebars(viewportWidth) {
+  if (typeof document.querySelectorAll !== "function") return [];
+  const result = [];
+  for (const element of document.querySelectorAll(".app-shell-left-panel")) {
+    const rect = elementRect(element);
+    if (!rect || rect.width < 40 || rect.height < 80 || rect.right <= 0 || rect.left >= viewportWidth) continue;
+    if (typeof getComputedStyle === "function") {
+      const style = getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.05) continue;
+    }
+    result.push({ element, rect });
+  }
+  return result;
+}
+
+function observeLayoutElement(element) {
+  if (!layoutResizeObserver || !observedLayoutElements || !element || observedLayoutElements.has(element)) return;
+  observedLayoutElements.add(element);
+  layoutResizeObserver.observe(element);
+}
+
+function updateReadingRail() {
+  if (typeof document.querySelectorAll !== "function") return;
+  const root = rootElement();
+  const viewportWidth = Math.max(
+    finiteNumber(root.clientWidth),
+    typeof window !== "undefined" ? finiteNumber(window.innerWidth) : 0,
+  );
+  if (viewportWidth < 1) return;
+
+  const sidebars = visibleSidebars(viewportWidth);
+  const sidebarRight = sidebars.reduce((right, item) => Math.max(right, Math.min(viewportWidth, item.rect.right)), 0);
+  const entries = [];
+  for (const thread of document.querySelectorAll(".thread-scroll-container")) {
+    const rect = elementRect(thread);
+    if (!rect || rect.width < 1 || rect.height < 1) continue;
+    const layout = calculateReadingRail({
+      viewportWidth,
+      threadLeft: rect.left,
+      threadRight: rect.right,
+      sidebarRight: sidebarRight > rect.left ? sidebarRight : 0,
+    });
+    thread.style?.setProperty("--shinobu-rail-inline-start", `${layout.left.toFixed(2)}px`);
+    thread.style?.setProperty("--shinobu-rail-inline-size", `${layout.width.toFixed(2)}px`);
+    thread.setAttribute?.("data-shinobu-rail-mode", layout.mode);
+    entries.push({ thread, rect, layout });
+    observeLayoutElement(thread);
+  }
+
+  if (!entries.length) {
+    root.removeAttribute("data-shinobu-layout");
+    return;
+  }
+
+  entries.sort((first, second) => first.rect.left - second.rect.left);
+  const primary = entries[0];
+  root.setAttribute("data-shinobu-layout", primary.layout.mode);
+  root.style.setProperty("--shinobu-primary-rail-inline-start", `${primary.layout.left.toFixed(2)}px`);
+  root.style.setProperty("--shinobu-primary-rail-inline-size", `${primary.layout.width.toFixed(2)}px`);
+
+  for (const item of sidebars) observeLayoutElement(item.element);
+  for (const surface of document.querySelectorAll(".main-surface, .browser-main-surface")) {
+    observeLayoutElement(surface);
+  }
+}
+
+function scheduleReadingRailUpdate() {
+  if (layoutFrameId !== null) return;
+  if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+    layoutFrameId = window.requestAnimationFrame(() => {
+      layoutFrameId = null;
+      updateReadingRail();
+    });
+    return;
+  }
+  updateReadingRail();
+}
+
+function startLayoutTracking() {
+  stopLayoutTracking();
+  observedLayoutElements = new WeakSet();
+  if (typeof ResizeObserver === "function") {
+    layoutResizeObserver = new ResizeObserver(scheduleReadingRailUpdate);
+    observeLayoutElement(rootElement());
+  }
+  if (typeof MutationObserver === "function" && document.body) {
+    layoutMutationObserver = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node?.nodeType !== 1) continue;
+          if (node.matches?.(".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface") ||
+              node.querySelector?.(".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface")) {
+            scheduleReadingRailUpdate();
+            return;
+          }
+        }
+      }
+    });
+    layoutMutationObserver.observe(document.body, { childList: true, subtree: true });
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener?.("resize", scheduleReadingRailUpdate, { passive: true });
+    window.addEventListener?.("transitionend", scheduleReadingRailUpdate, true);
+  }
+  updateReadingRail();
+  if (typeof setTimeout === "function") {
+    layoutTimeoutIds = [250, 900].map((delay) => setTimeout(scheduleReadingRailUpdate, delay));
+  }
+}
+
+function clearReadingRailState() {
+  const root = rootElement();
+  root.removeAttribute("data-shinobu-layout");
+  root.style.removeProperty("--shinobu-primary-rail-inline-start");
+  root.style.removeProperty("--shinobu-primary-rail-inline-size");
+  if (typeof document.querySelectorAll !== "function") return;
+  for (const element of document.querySelectorAll(".thread-scroll-container")) {
+    element.removeAttribute?.("data-shinobu-rail-mode");
+    element.style?.removeProperty("--shinobu-rail-inline-start");
+    element.style?.removeProperty("--shinobu-rail-inline-size");
+  }
+}
+
+function stopLayoutTracking() {
+  layoutResizeObserver?.disconnect();
+  layoutMutationObserver?.disconnect();
+  layoutResizeObserver = null;
+  layoutMutationObserver = null;
+  observedLayoutElements = null;
+  for (const timeoutId of layoutTimeoutIds) clearTimeout(timeoutId);
+  layoutTimeoutIds = [];
+  if (typeof window !== "undefined") {
+    if (layoutFrameId !== null && typeof window.cancelAnimationFrame === "function") {
+      window.cancelAnimationFrame(layoutFrameId);
+    }
+    window.removeEventListener?.("resize", scheduleReadingRailUpdate);
+    window.removeEventListener?.("transitionend", scheduleReadingRailUpdate, true);
+  }
+  layoutFrameId = null;
+  clearReadingRailState();
 }
 
 function rgbToHex({ r, g, b }) {
@@ -308,7 +519,7 @@ function applyThemeState(api) {
   const artworkEnabled = api.storage.get("artworkEnabled", true) !== false;
   const autoPaletteEnabled = api.storage.get("autoPaletteEnabled", true) !== false;
   const motionEnabled = api.storage.get("motionEnabled", true) !== false;
-  const fit = api.storage.get("artworkFit", "contain") === "cover" ? "cover" : "contain";
+  const fit = api.storage.get("artworkFit", "cover") === "contain" ? "contain" : "cover";
   const positionKey = api.storage.get("artworkPosition", "right");
   const position = POSITION_VALUES[positionKey] || POSITION_VALUES.right;
 
@@ -553,10 +764,10 @@ async function renderSettings(container, api) {
   card.appendChild(settingRow("轻微动效", "控制甜甜圈漂浮和输入框呼吸光。", motionSwitch));
 
   const fitSelect = selectControl(
-    api.storage.get("artworkFit", "contain"),
+    api.storage.get("artworkFit", "cover"),
     [
-      { value: "contain", label: "人物安全区完整显示（推荐）" },
-      { value: "cover", label: "铺满主界面（可能裁切）" },
+      { value: "cover", label: "无缝铺满主界面（推荐）" },
+      { value: "contain", label: "完整显示原图（可能出现留白）" },
     ],
     (value) => {
       api.storage.set("artworkFit", value);
@@ -641,10 +852,10 @@ module.exports = {
       return;
     }
     activeApi = api;
-    if (Number(api.storage.get("layoutVersion", 0)) < 2) {
-      api.storage.set("artworkFit", "contain");
+    if (Number(api.storage.get("layoutVersion", 0)) < 3) {
+      api.storage.set("artworkFit", "cover");
       api.storage.set("artworkPosition", "right");
-      api.storage.set("layoutVersion", 2);
+      api.storage.set("layoutVersion", 3);
     }
     styleElement?.remove();
     styleElement = document.createElement("style");
@@ -663,6 +874,7 @@ module.exports = {
       }
     }
     applyThemeState(api);
+    startLayoutTracking();
 
     api.settings?.registerPage({
       id: "appearance",
@@ -682,6 +894,7 @@ module.exports = {
   stop() {
     styleElement?.remove();
     styleElement = null;
+    stopLayoutTracking();
     removeThemeState();
     activeApi?.log.info("Shinobu theme stopped");
     activeApi = null;
@@ -692,5 +905,6 @@ module.exports = {
     buildPaletteFromPixels,
     contrastRatio,
     isValidPalette,
+    calculateReadingRail,
   },
 };

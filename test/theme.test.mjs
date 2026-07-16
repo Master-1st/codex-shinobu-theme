@@ -119,7 +119,7 @@ test("renderer lifecycle installs and removes one scoped style", async () => {
   assert.equal(attributes.get("data-shinobu-theme"), "active");
   assert.equal(attributes.get("data-shinobu-motion"), "on");
   assert.equal(attributes.get("data-shinobu-auto-palette"), "on");
-  assert.equal(properties.get("--shinobu-art-fit"), "contain");
+  assert.equal(properties.get("--shinobu-art-fit"), "cover");
   assert.equal(pages.length, 1);
   assert.equal(pages[0].title, "小忍主题");
 
@@ -128,6 +128,98 @@ test("renderer lifecycle installs and removes one scoped style", async () => {
   assert.equal(attributes.has("data-shinobu-theme"), false);
   assert.equal(attributes.has("data-shinobu-auto-palette"), false);
   assert.equal(properties.has("--shinobu-art-fit"), false);
+});
+
+test("renderer layout tracking applies and removes an overlay-sidebar offset", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const makeStyle = () => {
+    const values = new Map();
+    return {
+      values,
+      setProperty: (name, value) => values.set(name, value),
+      removeProperty: (name) => values.delete(name),
+    };
+  };
+  const rootStyle = makeStyle();
+  const threadStyle = makeStyle();
+  const rootAttributes = new Map();
+  const threadAttributes = new Map();
+  const rootElement = {
+    clientWidth: 1963,
+    style: rootStyle,
+    setAttribute: (name, value) => rootAttributes.set(name, value),
+    removeAttribute: (name) => rootAttributes.delete(name),
+  };
+  const sidebar = {
+    getBoundingClientRect: () => ({ left: 0, right: 330, top: 0, bottom: 1188, width: 330, height: 1188 }),
+  };
+  const thread = {
+    style: threadStyle,
+    setAttribute: (name, value) => threadAttributes.set(name, value),
+    removeAttribute: (name) => threadAttributes.delete(name),
+    getBoundingClientRect: () => ({ left: 146, right: 1963, top: 59, bottom: 1188, width: 1817, height: 1129 }),
+  };
+  const mainSurface = {
+    getBoundingClientRect: () => ({ left: 146, right: 1963, top: 0, bottom: 1188, width: 1817, height: 1188 }),
+  };
+  const document = {
+    documentElement: rootElement,
+    body: {},
+    head: { appendChild() {} },
+    createElement: () => ({ dataset: {}, style: {}, remove() {} }),
+    querySelectorAll: (selector) => {
+      if (selector === ".app-shell-left-panel") return [sidebar];
+      if (selector === ".thread-scroll-container") return [thread];
+      if (selector === ".main-surface, .browser-main-surface") return [mainSurface];
+      return [];
+    },
+  };
+  const observed = [];
+  let disconnected = false;
+  class FakeResizeObserver {
+    constructor(callback) { this.callback = callback; }
+    observe(element) { observed.push(element); }
+    disconnect() { disconnected = true; }
+  }
+  const window = {
+    innerWidth: 1963,
+    addEventListener() {},
+    removeEventListener() {},
+  };
+  const module = { exports: {} };
+  vm.runInNewContext(source, {
+    module,
+    exports: module.exports,
+    document,
+    window,
+    ResizeObserver: FakeResizeObserver,
+    getComputedStyle: () => ({ display: "block", visibility: "visible", opacity: "1" }),
+    console,
+  });
+
+  await module.exports.start({
+    process: "renderer",
+    manifest: { id: "io.github.master1st.codex-shinobu-theme" },
+    storage: { get: (_key, fallback) => fallback, set() {} },
+    fs: { exists: async () => false, read: async () => "{}", write: async () => {} },
+    settings: { registerPage() {} },
+    log: { info() {}, warn() {}, error() {} },
+  });
+
+  assert.equal(rootAttributes.get("data-shinobu-layout"), "rail");
+  assert.equal(threadAttributes.get("data-shinobu-rail-mode"), "rail");
+  assert.equal(threadStyle.values.get("--shinobu-rail-inline-start"), "208.00px");
+  assert.equal(threadStyle.values.get("--shinobu-rail-inline-size"), "745.28px");
+  assert.ok(observed.includes(rootElement));
+  assert.ok(observed.includes(sidebar));
+  assert.ok(observed.includes(thread));
+
+  module.exports.stop();
+  assert.equal(disconnected, true);
+  assert.equal(rootAttributes.has("data-shinobu-layout"), false);
+  assert.equal(threadAttributes.has("data-shinobu-rail-mode"), false);
+  assert.equal(threadStyle.values.has("--shinobu-rail-inline-start"), false);
+  assert.equal(threadStyle.values.has("--shinobu-rail-inline-size"), false);
 });
 
 test("automatic palette produces distinct colors with readable text", async () => {
@@ -148,6 +240,33 @@ test("automatic palette produces distinct colors with readable text", async () =
   assert.notEqual(palette.secondary, palette.accent);
   assert.ok(module.exports.__test.contrastRatio(palette.ink, palette.surface) >= 7);
   assert.ok(module.exports.__test.contrastRatio(palette.muted, palette.surface) >= 4.5);
+});
+
+test("reading rail stays outside an overlay sidebar when the window is restored", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const module = { exports: {} };
+  vm.runInNewContext(source, { module, exports: module.exports, console });
+
+  const restored = module.exports.__test.calculateReadingRail({
+    viewportWidth: 1963,
+    threadLeft: 146,
+    threadRight: 1963,
+    sidebarRight: 330,
+  });
+  assert.equal(restored.mode, "rail");
+  assert.ok(restored.absoluteLeft >= 354, "reading rail must start after the visible sidebar");
+  assert.ok(restored.absoluteRight <= 1963 * 0.56 + 0.01, "reading rail must end before the character safe area");
+  assert.ok(restored.width >= 700, "restored window should retain a useful reading width");
+
+  const compact = module.exports.__test.calculateReadingRail({
+    viewportWidth: 900,
+    threadLeft: 110,
+    threadRight: 900,
+    sidebarRight: 270,
+  });
+  assert.equal(compact.mode, "compact");
+  assert.ok(compact.absoluteLeft >= 286, "compact content must still stay outside the sidebar");
+  assert.ok(compact.absoluteRight <= 884, "compact content must remain inside the work area");
 });
 
 test("stored artwork palette applies and is fully removed on stop", async () => {
@@ -425,6 +544,11 @@ test("theme CSS scopes stable Codex surfaces and responsive fallbacks", async ()
   assert.match(css, /#root[\s\S]*var\(--shinobu-art-image\)/);
   assert.match(css, /data-mcp-app-portal-target="true"/);
   assert.match(css, /data-pip-obstacle="thread-footer"/);
+  assert.doesNotMatch(css, /radial-gradient\(circle, #fff 0 1px/);
+  assert.match(css, /\.app-header-tint[\s\S]*width: min\(860px/);
+  assert.match(css, /--shinobu-rail-inline-start/);
+  assert.match(css, /--shinobu-rail-inline-size/);
+  assert.match(css, /data-shinobu-layout="compact"/);
   assert.match(css, /color-mix\(in srgb, var\(--shinobu-/);
   assert.match(css, /background-image:[\s\S]*var\(--shinobu-art-image\)/);
   assert.doesNotMatch(css, /shinobu-gallery-reserve/);
@@ -432,7 +556,7 @@ test("theme CSS scopes stable Codex surfaces and responsive fallbacks", async ()
 
 test("visual QA preview contains every supported state", async () => {
   const preview = await readFile(new URL("../preview/index.html", import.meta.url), "utf8");
-  for (const state of ["normal", "split", "long", "approval", "menu", "dialog", "settings"]) {
+  for (const state of ["normal", "split", "long", "shrink", "approval", "menu", "dialog", "settings"]) {
     assert.ok(preview.includes(`data-state=\"${state}\"`) || preview.includes(`data-state="${state}"`) || preview.includes(`state=\"${state}\"`) || preview.includes(`state === \"${state}\"`) || preview.includes(`data-state="${state}"`) || preview.includes(`body[data-state=\"${state}\"]`), `missing preview state ${state}`);
   }
   assert.match(preview, /palette.*blue/);

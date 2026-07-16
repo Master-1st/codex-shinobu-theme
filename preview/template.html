@@ -31,7 +31,7 @@
       .approval-actions button { padding: 7px 12px; border: 0; border-radius: 9px; color: #fff; background: var(--shinobu-strong); }
       pre { overflow: auto; padding: 12px; background: color-mix(in srgb, var(--shinobu-cream) 90%, transparent); }
       [data-thread-scroll-footer] { position: relative; width: 100%; padding: 10px 0 18px; }
-      .composer-wrap { width: min(880px, calc(100% - 48px), 32vw); max-width: min(880px, calc(100% - 48px), 32vw); margin: 0 auto 0 24px; }
+      .composer-wrap { width: min(860px, calc(100% - 48px), 32vw); max-width: min(860px, calc(100% - 48px), 32vw); margin: 0 auto 0 24px; }
       .composer-surface-chrome { padding: 14px 16px 10px; }
       .composer-surface-chrome textarea { width: 100%; min-height: 48px; resize: none; border: 0; outline: 0; background: transparent; }
       .composer-footer { display: flex; align-items: center; justify-content: space-between; color: var(--shinobu-muted); font-size: 12px; }
@@ -58,6 +58,11 @@
       body[data-state="split"] .workspace { grid-template-columns: minmax(0, 37%) minmax(0, 63%); }
       body[data-state="split"] .detail-pane { display: block; }
       body[data-state="long"] .long-copy { display: block; }
+      body[data-state="shrink"] .long-copy { display: block; }
+      body[data-state="shrink"] .preview-shell { grid-template-columns: 150px 1fr; padding: 0; gap: 0; }
+      body[data-state="shrink"] .app-shell-left-panel { z-index: 20; width: 330px; border-radius: 0 !important; }
+      body[data-state="shrink"] .main-surface { border-radius: 0 !important; }
+      body[data-state="shrink"] .app-header-tint { padding-left: 204px; }
       body[data-state="approval"] [data-codex-approval-surface] { display: block; }
       body[data-state="menu"] [role="menu"][data-state="open"] { display: block; }
       body[data-state="dialog"] [role="dialog"][data-state="open"],
@@ -76,6 +81,9 @@
       @media (max-width: 620px) {
         .preview-shell { grid-template-columns: 1fr; }
         .app-shell-left-panel { display: none; }
+        body[data-state="shrink"] .preview-shell { grid-template-columns: 1fr; }
+        body[data-state="shrink"] .main-surface { grid-column: 1; }
+        body[data-state="shrink"] .app-header-tint { padding-left: 16px; }
         .conversation { padding-top: 24px; }
       }
     </style>
@@ -164,6 +172,35 @@ theme.verify(["normal", "split", "dialog"]);</code></pre>
       const params = new URLSearchParams(location.search);
       const state = params.get("state") || "normal";
       document.body.dataset.state = state;
+      const calculatePreviewRail = () => {
+        const root = document.documentElement;
+        const thread = document.querySelector(".thread-scroll-container");
+        const sidebar = document.querySelector(".app-shell-left-panel");
+        if (!thread || !sidebar) return;
+        const viewportWidth = root.clientWidth;
+        const threadRect = thread.getBoundingClientRect();
+        const sidebarRect = sidebar.getBoundingClientRect();
+        if (threadRect.width < 1 || threadRect.height < 1) {
+          delete root.dataset.shinobuLayout;
+          return;
+        }
+        const sidebarRight = sidebarRect.width >= 40 ? Math.min(viewportWidth, sidebarRect.right) : 0;
+        const safeStart = Math.max(threadRect.left + 24, sidebarRight + 24);
+        const safeRight = Math.min(threadRect.right - 24, viewportWidth * 0.56);
+        const safeWidth = safeRight - safeStart;
+        const compact = safeWidth < 360;
+        const start = compact ? Math.max(threadRect.left + 16, sidebarRight + 16) : safeStart;
+        const right = compact ? Math.max(start, threadRect.right - 16) : safeRight;
+        const width = compact ? right - start : Math.min(860, safeWidth);
+        thread.style.setProperty("--shinobu-rail-inline-start", `${Math.max(compact ? 16 : 24, start - threadRect.left)}px`);
+        thread.style.setProperty("--shinobu-rail-inline-size", `${Math.max(0, width)}px`);
+        thread.dataset.shinobuRailMode = compact ? "compact" : "rail";
+        root.dataset.shinobuLayout = compact ? "compact" : "rail";
+        root.style.setProperty("--shinobu-primary-rail-inline-start", `${Math.max(compact ? 16 : 24, start - threadRect.left)}px`);
+        root.style.setProperty("--shinobu-primary-rail-inline-size", `${Math.max(0, width)}px`);
+      };
+      calculatePreviewRail();
+      window.addEventListener("resize", calculatePreviewRail, { passive: true });
       if (params.get("art") === "off") {
         document.documentElement.dataset.shinobuArtwork = "off";
         document.documentElement.style.setProperty("--shinobu-art-image", "none");
