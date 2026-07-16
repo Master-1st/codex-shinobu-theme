@@ -1,0 +1,13 @@
+{
+  "source": "user-provided-reference-plus-generated-derivative",
+  "referenceFile": "shinobu-hero-source.png",
+  "referenceSha256": "337b1b96e2be42504091a0f807c53a1b62c47d20b68deb381471c47ee56a5edf",
+  "generatedFile": "shinobu-hero-portrait.png",
+  "generatedSha256": "7e838852e05a40622e6e1c19a3d618d8741add394e323c249446d017a9e165e5",
+  "generatedWidth": 1086,
+  "generatedHeight": 1448,
+  "releaseFile": "shinobu-hero-portrait.webp",
+  "releaseSha256": "801db30b2dba2ed26db9cca4b14460cd84783a68e9da0c03f63f249c8fcbdedd",
+  "releaseQuality": 92,
+  "generator": "OpenAI built-in image generation"
+}

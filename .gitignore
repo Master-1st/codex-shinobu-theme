@@ -1,0 +1,10 @@
+node_modules/
+output/
+preview/index.html
+dist/
+*.log
+.DS_Store
+Thumbs.db
+.edge-preview-profile/
+.gh-auth-*
+/.github/workflows/

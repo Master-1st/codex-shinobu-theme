@@ -1,0 +1,16 @@
+{
+  "name": "codex-shinobu-theme",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A Windows-friendly Shinobu-inspired Codex Desktop theme for Codex++.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "npm run build && node --test",
+    "package": "npm test && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1"
+  }
+}
+

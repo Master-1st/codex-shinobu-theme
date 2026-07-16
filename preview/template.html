@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN" data-codex-window-type="electron" data-shinobu-theme="active" data-shinobu-motion="on" data-shinobu-artwork="on">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Codex Shinobu Theme Preview</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif; overflow: hidden; }
+      button, textarea { font: inherit; }
+      .preview-shell { display: grid; grid-template-columns: 270px 1fr; height: 100vh; padding: 12px 12px 0; gap: 10px; }
+      .app-shell-left-panel { padding: 18px 12px; border-radius: 18px 18px 0 0; }
+      .brand { display: flex; align-items: center; gap: 10px; margin: 4px 8px 24px; font-weight: 750; }
+      .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border: 7px solid #79bd98; border-radius: 50%; }
+      .side-label { margin: 20px 10px 8px; color: #715f66; font-size: 11px; font-weight: 700; letter-spacing: .13em; }
+      .side-row { padding: 10px 12px; margin: 3px 0; font-size: 13px; }
+      .main-surface { display: grid; grid-template-rows: 58px 1fr; overflow: hidden; }
+      .app-header-tint { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+      .header-actions { display: flex; gap: 8px; }
+      .header-actions button { color: #715f66; background: #fff9; border: 1px solid #79bd9852; border-radius: 9px; padding: 7px 10px; }
+      .thread-scroll-container { position: relative; display: flex; min-height: 0; flex-direction: column; overflow: auto; }
+      .conversation { width: min(830px, calc(100% - 56px)); margin: 0 auto; padding: 46px 0 24px; flex: 1; }
+      [data-user-message-bubble] { width: fit-content; max-width: 70%; margin-left: auto; padding: 12px 15px; }
+      [data-local-conversation-final-assistant] { max-width: 88%; margin-top: 22px; line-height: 1.65; }
+      [data-thread-scroll-footer] { position: sticky; bottom: 0; width: 100%; padding: 10px 0 24px; }
+      .composer-wrap { width: min(880px, calc(100% - 48px)); margin: 0 auto; }
+      .composer-surface-chrome { padding: 14px 16px 10px; }
+      .composer-surface-chrome textarea { width: 100%; min-height: 48px; resize: none; border: 0; outline: 0; background: transparent; }
+      .composer-footer { display: flex; align-items: center; justify-content: space-between; color: #715f66; font-size: 12px; }
+      .send { width: 32px; height: 32px; border: 0; border-radius: 50%; color: #fff; background: #70b78f; }
+      code { color: #3f7e5d; }
+    </style>
+    <style>__THEME_CSS__</style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="preview-shell">
+        <aside class="app-shell-left-panel">
+          <div class="brand"><span class="brand-mark"></span><span>Codex</span></div>
+          <div class="side-row">＋ 新建任务</div>
+          <div class="side-label">项目</div>
+          <div class="side-row" data-app-action-sidebar-project-row>codex-shinobu-theme</div>
+          <div class="side-label">最近任务</div>
+          <div class="side-row" data-app-action-sidebar-thread-row data-app-action-sidebar-thread-active="true">制作 Windows 小忍主题</div>
+          <div class="side-row" data-app-action-sidebar-thread-row>检查原版图片接口</div>
+          <div class="side-row" data-app-action-sidebar-thread-row>打包 GitHub Release</div>
+        </aside>
+        <main class="main-surface">
+          <header class="app-header-tint">
+            <div data-thread-title>制作 Windows 小忍主题</div>
+            <div class="header-actions"><button>打开</button><button>•••</button></div>
+          </header>
+          <section class="thread-scroll-container">
+            <div class="conversation" data-mcp-app-portal-target="true">
+              <div data-user-message-bubble>不要让对话挡住小忍，界面再简单一点。</div>
+              <article data-local-conversation-final-assistant>
+                已改成左右分区：聊天、回复与输入框只占左侧工作区，右侧原图保持完整清晰。<br><br>
+                图片只保存在本机；可在设置中更换，并切换 <code>完整显示 / 铺满画框</code>。
+              </article>
+            </div>
+            <div data-thread-scroll-footer="true">
+              <div class="composer-wrap" data-pip-obstacle="thread-footer">
+                <div class="composer-surface-chrome">
+                  <textarea placeholder="让 Codex 继续完善主题…"></textarea>
+                  <div class="composer-footer"><span>本地 · 高权限</span><button class="send">↑</button></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
