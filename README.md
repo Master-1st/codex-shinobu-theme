@@ -4,6 +4,8 @@
 
 ![Codex Shinobu Theme preview](assets/preview.png)
 
+背景配色、聊天区与角色画廊的布局逻辑见 [主题配色与背景设计](docs/THEME-DESIGN.md)。
+
 > 非官方同人项目，与 OpenAI、《物语》系列及其权利方无关联。代码使用 MIT License；角色与图片权利不包含在 MIT 授权内，详见 [NOTICE.md](NOTICE.md)。
 
 ## 为什么 Windows 版这样安装
