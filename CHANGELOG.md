@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0 — 2026-07-16
+
+- Marks the project and release package as Windows-only and adds a complete Windows user guide, troubleshooting guide, release checklist, read-only analyzer, and double-click uninstaller.
+- Stops applying shared geometry overrides to every Codex header; the full-width app menu keeps native layout while the task title uses the verified 36 px compact-toolbar inset on the right.
+- Adds a default performance mode that removes message-level backdrop passes and continuous focus animation while retaining translucent surfaces.
+- Narrows mutation and transition tracking, batches layout reads before writes, avoids unchanged DOM writes, and unobserves detached layout nodes.
+- Clears the compact task-header marker when navigation removes the thread title, preventing the right-side title style from leaking onto non-thread pages.
+- Hardens install and uninstall paths against a modified manifest ID, repairs shortcuts only to known Codex++ mirrors, and installs complete linked documentation.
+- Rejects junction/reparse-point trees before uninstalling theme or artwork data, with a full preflight before either directory can be removed.
+- Counts the diagnostic log main/WAL/SHM files together, covers Codex browser partitions, rejects reparse-point cleanup, adds `-WhatIf`, and completes one transaction confirmation before any Codex process can be closed.
+- Adds Windows CI and stronger installer, packaging, checksum, version, path-boundary, and optimizer regression coverage.
+
 ## 1.1.4 — 2026-07-16
 
 - Restores Codex's fixed positioning for the compact task header instead of leaving the native top offset on a relative element.

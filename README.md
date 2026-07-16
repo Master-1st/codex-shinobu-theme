@@ -1,134 +1,124 @@
-# Codex Shinobu Theme（Windows）
+# Codex Shinobu Theme（仅 Windows）
 
-给 Windows 版 Codex Desktop 使用的小忍主题：柠檬黄、薄荷绿、奶油粉配色，内置右侧人物安全区的 16:9 横版忍野忍背景，并支持在设置中换成任意本地 PNG、JPG 或 WebP。角色图铺在主界面底层，对话、回复、审批卡和输入框以半透明玻璃层叠在画面上方。
+> [!IMPORTANT]
+> **本项目只能用于 Windows 版 Codex Desktop，并且必须通过 Codex++ 加载。** 不支持 macOS、Linux/WSL、Codex Web、Codex CLI、VS Code 扩展，也不能直接加载到未经 Codex++ 处理的 Microsoft Store 原版程序中。Windows 11 x64 已实机验证；Windows 10 x64 仅作兼容目标，尚未完成同等实机验收。
 
-`v1.1.4` 会在最大化、恢复窗口和侧栏展开后重新测量实际可见工作区：回复与输入框在侧栏之外保持居中，以更透明的玻璃层适度覆盖人物；应用菜单栏保持全长，任务标题栏只保留约三分之一屏宽并固定在右上角。标题栏不会再重复占用正文高度，右侧保留明确留白。空间不足时自动切换紧凑模式，不再出现缩小后左半边被裁掉的问题。
+给 Windows 版 Codex Desktop 使用的小忍主题：柠檬黄、薄荷绿、奶油粉配色，内置人物位于右侧安全区的 16:9 横版背景，并支持换成你有权使用的本地 PNG、JPG 或 WebP。人物位于主界面背景层，对话、回复、审批卡和输入框以半透明玻璃层叠在画面上方。
+
+[直接下载 v1.2.0 Windows 安装包](https://github.com/Master-1st/codex-shinobu-theme/releases/download/v1.2.0/codex-shinobu-theme-v1.2.0-windows.zip) · [查看最新 Release](https://github.com/Master-1st/codex-shinobu-theme/releases/latest)
 
 ![Codex Shinobu Theme preview](assets/preview.png)
 
-背景与人物安全区逻辑见 [主题配色与背景设计](docs/THEME-DESIGN.md)，换图后的取色规则见 [自动生成主题配色](docs/AUTO-PALETTE.md)，实测窗口与弹层矩阵见 [视觉与功能验收](docs/VISUAL-QA.md)。仓库还附带独立的 [Codex Windows 优化器](docs/CODEX-WINDOWS-OPTIMIZER.md)，用于安全轮换过大的诊断日志并清理可再生缓存。
+## 三步安装
 
-> 非官方同人项目，与 OpenAI、《物语》系列及其权利方无关联。代码使用 MIT License；角色与图片权利不包含在 MIT 授权内，详见 [NOTICE.md](NOTICE.md)。
+1. 先安装并至少启动一次 [Codex++](https://github.com/b-nnett/codex-plusplus)。
+2. 下载上面的 Windows ZIP，**完整解压**；不要在压缩包预览窗口里直接双击。
+3. 双击 `install.cmd`，安装完成后完全退出所有 Codex 窗口，再从 **Codex++** 快捷方式启动。
 
-## 为什么 Windows 版这样安装
-
-Microsoft Store 版 Codex 位于受保护、带签名的 `WindowsApps` 目录。直接替换 `app.asar` 容易造成权限、更新或启动问题。
-
-本项目使用 [Codex++](https://github.com/b-nnett/codex-plusplus) 的 Windows 可写副本与 tweak 接口：
-
-- 不夺取 `WindowsApps` 所有权；
-- 不覆盖商店版 Codex；
-- Codex 更新后可由 Codex++ 修复加载器；
-- 主题可以单独停用或删除；
-- 自定义图片只保存在本机。
-
-## 安装
-
-### 1. 安装 Codex++
-
-在 PowerShell 中运行 Codex++ 官方安装命令：
+首次安装 Codex++ 时，可在 PowerShell 运行其官方命令：
 
 ```powershell
 irm https://raw.githubusercontent.com/b-nnett/codex-plusplus/main/install.ps1 | iex
 ```
 
-### 2. 安装小忍主题
-
-1. 从本仓库的 Releases 下载 `codex-shinobu-theme-v1.1.4-windows.zip`。
-2. 完整解压 ZIP。
-3. 双击 `install.cmd`。
-4. 从开始菜单或桌面启动 **Codex++** 快捷方式。
-
-安装器把主题放到：
+主题安装到：
 
 ```text
 %APPDATA%\codex-plusplus\tweaks\io.github.master1st.codex-shinobu-theme
 ```
 
-更新主题时再次运行 `install.cmd` 即可；旧主题代码会自动备份，自定义图片数据不会被覆盖。
+再次运行 `install.cmd` 即可更新。旧主题代码会进入 `theme-backups`，自定义图片数据不会被覆盖。安装器只修复已知 Codex++ 镜像目录中的失效快捷方式，不修改 Microsoft Store 原版快捷方式或 `WindowsApps`。
 
-安装器还会检查当前 Windows Store 版的快捷方式兼容问题：如果 Codex++ 快捷方式错误地指向只负责转交启动的 `Codex.exe`，或仍指向已经不存在的旧用户/旧副本路径，会自动定位本机最新的有效 Codex++ `ChatGPT.exe`，并修复桌面与开始菜单快捷方式。它不会改动 Microsoft Store 原版快捷方式。
+完整步骤、回滚和数据目录见 [Windows 使用说明书](docs/WINDOWS-USER-GUIDE.md)。双击无反应、主题不显示或更新后布局异常见 [故障排查](docs/TROUBLESHOOTING.md)。
 
-## Codex 窗口卡顿优化
+## v1.2.0 的重点
 
-如果 Codex 长时间运行后打开窗口或切换大型任务明显变慢，可双击：
+- 顶部菜单保留原生全长布局；右侧任务标题栏只覆盖约三分之一窗口，并使用 Codex 实际的 36 px 工具栏基线定位。
+- 对话和输入框继续在侧栏之外居中，缩放、恢复窗口和覆盖式侧栏都由同一套测量逻辑处理。
+- 默认开启“性能优先”：流式长回复不再逐条执行毛玻璃重绘，持续呼吸动画关闭；可在主题设置中恢复完整效果。
+- DOM 监听只响应结构变化和布局相关过渡，已卸载的任务节点会解除观察，减少长时间运行后的额外开销。
+- 新增完整 Windows 说明书、故障排查、只读分析和双击卸载入口。
+- 优化器按日志主库、WAL、SHM 总大小判断，并识别 Codex 内嵌浏览器分区缓存。
 
-```text
-Optimize-Codex.cmd
-```
+## 双击工具
 
-工具会先显示内存与数据占用，再关闭 Codex、备份并轮换超过 128 MB 的诊断日志库、清理 Chromium/GPU 可再生缓存，最后重新启动。它不会删除登录、任务、附件、技能、设置或自定义图片，也不会修改 Codex 程序文件。
+| 文件 | 用途 | 是否改动数据 |
+| --- | --- | --- |
+| `install.cmd` | 一键安装或覆盖更新主题 | 只写入 Codex++ 主题目录，并备份旧主题 |
+| `Analyze-Codex.cmd` | 查看进程内存、日志、缓存和大型任务 | 否，只读 |
+| `Optimize-Codex.cmd` | 经确认后轮换过大日志并清理可再生缓存 | 是，可回滚日志备份；不删任务和登录 |
+| `Uninstall-Theme.cmd` | 卸载主题，可选择保留或清除导入图片 | 只处理本主题目录 |
 
-只想检查而不更改时，在 PowerShell 运行：
+## 换成自己的原版图片
 
-```powershell
-.\tools\Optimize-Codex.ps1 -Mode Analyze
-```
+打开 `设置 → Tweaks → 小忍主题`，点击“选择本地图片”。支持 PNG、JPG、WebP，单张最大 16 MB。图片会在本机转换为 WebP，不会上传。
 
-详细安全边界和恢复方法见 [Codex Windows 优化器说明](docs/CODEX-WINDOWS-OPTIMIZER.md)。
+设置页可以：
 
-## 使用你自己的原版图片
+- 显示或隐藏角色背景；
+- 根据图片自动生成整套主题色；
+- 开关轻微动效和“性能优先”；
+- 在无缝铺满与完整显示之间切换；
+- 设置图片靠左、居中或靠右；
+- 一键恢复内置插画。
 
-打开：
+建议使用 16:9 横图，把人物放在右侧约 40%，中部保留低细节区域。完整取色流程见 [换图后自动生成主题配色](docs/AUTO-PALETTE.md)。
 
-```text
-设置 → Tweaks → 小忍主题
-```
+## Codex 卡顿维护边界
 
-然后点击“选择本地图片”。主题会在本机完成缩放与 WebP 转换，不会上传图片。设置页还可以：
+本仓库不会修改 OpenAI 的签名程序、`app.asar`、私有数据库结构或未经说明的 Electron 参数。可以安全优化的是：
 
-- 开关角色主视觉；
-- 开关“根据图片自动配色”，并预览生成的五个核心颜色；
-- 开关轻微动效；
-- 切换“无缝铺满主界面 / 完整显示原图”；
-- 设置角色靠左、居中或靠右；
-- 一键恢复仓库内置图片。
+- 本主题自己的 DOM 监听、动画和毛玻璃开销；
+- 过大的 Codex 诊断日志；
+- 可由 Codex 自动重建的 Chromium / GPU / 内嵌浏览器缓存；
+- 大型任务的只读提示。
 
-支持 PNG、JPG、WebP，单张最大 16 MB。建议使用 16:9、人物位于右侧 40%、左侧有低细节留白的 1920×1080 图片。自动配色会同步更新侧栏、对话、输入框、按钮、菜单、弹窗和编辑器颜色，并对正文做对比度校正。
+双击 `Analyze-Codex.cmd` 可先做只读检查。需要维护时再运行 `Optimize-Codex.cmd`；详细备份、首次重建缓存和恢复方法见 [Codex Windows 优化器](docs/CODEX-WINDOWS-OPTIMIZER.md)。
 
 ## 卸载
 
-在解压后的目录运行：
+双击 `Uninstall-Theme.cmd`：
 
-```powershell
-.\uninstall.ps1
-```
+- `K`：卸载主题，保留导入图片；
+- `P`：卸载主题并清除导入图片；
+- `C`：取消。
 
-默认保留你导入的图片数据，方便以后重装。需要一并删除时：
+也可以在 PowerShell 使用 `uninstall.ps1`。Codex++ 本身需单独使用 `codexplusplus uninstall` 卸载。
 
-```powershell
-.\uninstall.ps1 -PurgeData
-```
+## 支持矩阵
 
-Codex++ 本身可用 `codexplusplus uninstall` 单独卸载。
+| 环境 | 状态 |
+| --- | --- |
+| Windows 11 x64 + Microsoft Store Codex Desktop + Codex++ | 已验证 |
+| Windows 10 x64 + Microsoft Store Codex Desktop + Codex++ | 兼容目标，未完成同等实机验证 |
+| 未经 Codex++ 处理的商店原版 Codex | 不支持加载主题 |
+| macOS、Linux、WSL、Web、CLI、VS Code 扩展 | 不支持 |
+
+当前选择器基线：Codex Desktop `26.707.12708.0`。Codex 更新后若局部样式异常，请附上 Codex、Codex++ 和主题版本提交 issue。
+
+## 文档
+
+- [Windows 使用说明书](docs/WINDOWS-USER-GUIDE.md)
+- [故障排查](docs/TROUBLESHOOTING.md)
+- [主题配色与背景设计](docs/THEME-DESIGN.md)
+- [换图后自动生成主题配色](docs/AUTO-PALETTE.md)
+- [视觉与功能验收](docs/VISUAL-QA.md)
+- [Codex Windows 优化器](docs/CODEX-WINDOWS-OPTIMIZER.md)
+- [发布检查表](docs/RELEASE-CHECKLIST.md)
+- [图片与素材授权边界](ASSET-LICENSE.md)
 
 ## 从源码构建
 
-需要 Node.js 20 或更新版本：
+仅在 Windows 上构建发布包，需 Node.js 20 或更新版本：
 
 ```powershell
 npm test
 npm run package
 ```
 
-输出文件位于 `output/`。项目不依赖 npm 第三方包；构建过程会把压缩后的默认 WebP 嵌入 tweak，从而避免 Electron 沙箱中的本地路径问题。
+输出位于 `output/`。项目没有 npm 第三方运行依赖；默认 WebP 会嵌入 renderer tweak，运行时不下载图片或脚本。
 
-## 兼容范围
-
-- Windows 10/11 x64
-- Microsoft Store Codex Desktop
-- Codex++ 1.0.0 或更新版本
-- 当前选择器基线：Codex Desktop `26.707.12708.0`
-
-Codex 的界面结构可能随更新变化。如果主题仍加载但局部没有着色，请提交 issue 并附上 Codex 与 Codex++ 版本。
-
-## 安全边界
-
-- 主题只运行在 renderer 范围，不注册主进程代码或网络请求。
-- 运行时不下载任何图片或脚本。
-- 本地图片写入 Codex++ 的 per-tweak 数据目录。
-- 发布包附带 SHA-256 校验文件。
-- `stop()` 会移除样式、属性与 CSS 变量，支持 Codex++ 热重载和安全模式。
+> 非官方同人项目，与 OpenAI、《物语》系列及其权利方无关联。MIT License 只覆盖软件代码，不覆盖角色、参考图、预览图或插画，详见 [NOTICE.md](NOTICE.md) 与 [ASSET-LICENSE.md](ASSET-LICENSE.md)。
 
 ## 致谢
 

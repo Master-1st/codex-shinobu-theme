@@ -157,14 +157,7 @@ html[data-shinobu-theme="active"][data-shinobu-layout="compact"] .browser-main-s
 }
 
 html[data-shinobu-theme="active"] .app-header-tint {
-  position: relative;
   z-index: 12;
-  box-sizing: border-box;
-  width: 100% !important;
-  max-width: none !important;
-  min-height: 52px;
-  margin: 0 !important;
-  padding: 0 24px !important;
   color: var(--shinobu-ink) !important;
   background: linear-gradient(90deg, color-mix(in srgb, var(--shinobu-cream) 78%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 68%, transparent) 62%, color-mix(in srgb, var(--shinobu-yellow-soft) 56%, transparent)) !important;
   border: 0 !important;
@@ -175,9 +168,9 @@ html[data-shinobu-theme="active"] .app-header-tint {
 }
 
 html[data-shinobu-theme="active"] .app-header-tint[data-app-shell-header-edge-scroll],
-html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"],
-html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
+html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"] {
   position: fixed !important;
+  top: calc(var(--inset-toolbar-sm, 36px) + 8px) !important;
   right: 24px !important;
   left: auto !important;
   width: clamp(320px, 33.333vw, 680px) !important;
@@ -185,7 +178,7 @@ html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
   height: 44px !important;
   min-height: 44px !important;
   max-height: 44px !important;
-  margin: 8px 0 0 !important;
+  margin: 0 !important;
   padding: 0 16px !important;
   background: linear-gradient(105deg, color-mix(in srgb, var(--shinobu-cream) 72%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 64%, transparent) 68%, color-mix(in srgb, var(--shinobu-yellow-soft) 58%, transparent)) !important;
   border: 1px solid color-mix(in srgb, var(--shinobu-mint) 42%, transparent) !important;
@@ -238,7 +231,7 @@ html[data-shinobu-theme="active"] .composer-surface-chrome {
   backdrop-filter: blur(20px) saturate(1.08);
 }
 
-html[data-shinobu-theme="active"][data-shinobu-motion="on"] .composer-surface-chrome:focus-within {
+html[data-shinobu-theme="active"][data-shinobu-motion="on"][data-shinobu-performance="off"] .composer-surface-chrome:focus-within {
   animation: shinobu-focus-breathe 5s ease-in-out infinite;
 }
 
@@ -259,6 +252,19 @@ html[data-shinobu-theme="active"] [data-local-conversation-final-assistant] {
   background: color-mix(in srgb, var(--shinobu-cream) 72%, transparent);
   box-shadow: 0 10px 22px #6d765229;
   backdrop-filter: blur(18px) saturate(1.06);
+}
+
+/* Performance mode keeps translucent surfaces but avoids per-message
+   backdrop passes, which are expensive while long replies are streaming. */
+html[data-shinobu-theme="active"][data-shinobu-performance="on"] [data-user-message-bubble],
+html[data-shinobu-theme="active"][data-shinobu-performance="on"] [data-local-conversation-final-assistant] {
+  backdrop-filter: none !important;
+}
+
+html[data-shinobu-theme="active"][data-shinobu-performance="on"] .app-shell-left-panel,
+html[data-shinobu-theme="active"][data-shinobu-performance="on"] .app-header-tint,
+html[data-shinobu-theme="active"][data-shinobu-performance="on"] .composer-surface-chrome {
+  backdrop-filter: blur(10px) saturate(1.04);
 }
 
 html[data-shinobu-theme="active"] [data-codex-approval-surface],
@@ -335,12 +341,11 @@ html[data-shinobu-theme="active"] .startup-loader__base {
 
 @media (max-width: 799px) {
   html[data-shinobu-theme="active"] .app-header-tint[data-app-shell-header-edge-scroll],
-  html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"],
-  html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
+  html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"] {
     right: 16px !important;
     width: min(320px, calc(100% - 32px)) !important;
     max-width: calc(100% - 32px) !important;
-    margin: 8px 0 0 !important;
+    margin: 0 !important;
   }
 
   html[data-shinobu-theme="active"] .thread-scroll-container [data-mcp-app-portal-target="true"],

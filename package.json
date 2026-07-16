@@ -1,9 +1,9 @@
 {
   "name": "codex-shinobu-theme",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "A Windows-friendly Shinobu-inspired Codex Desktop theme for Codex++.",
+  "description": "A Windows-only Shinobu-inspired Codex Desktop theme for Codex++.",
   "engines": {
     "node": ">=20"
   },

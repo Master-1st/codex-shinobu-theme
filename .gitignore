@@ -8,4 +8,3 @@ dist/
 Thumbs.db
 .edge-preview-profile/
 .gh-auth-*
-/.github/workflows/

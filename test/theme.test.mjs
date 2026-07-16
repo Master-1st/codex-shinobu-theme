@@ -24,6 +24,17 @@ test("Windows optimizer analyzes a disposable profile without changing it", { sk
     await writeFile(join(codexHome, "sessions", "2026", "07", "16", "rollout-test.jsonl"), "{}\n");
 
     const scriptPath = new URL("../tools/Optimize-Codex.ps1", import.meta.url).pathname.replace(/^\/(.:)/, "$1");
+    await assert.rejects(
+      execFileAsync("powershell.exe", [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", scriptPath,
+        "-Mode", "Analyze",
+        "-CodexHome", codexHome,
+        "-WebProfile", webProfile,
+      ]),
+      /Custom maintenance roots require -AllowCustomPaths/,
+    );
     const { stdout } = await execFileAsync("powershell.exe", [
       "-NoProfile",
       "-ExecutionPolicy", "Bypass",
@@ -31,12 +42,53 @@ test("Windows optimizer analyzes a disposable profile without changing it", { sk
       "-Mode", "Analyze",
       "-CodexHome", codexHome,
       "-WebProfile", webProfile,
+      "-AllowCustomPaths",
     ]);
 
     assert.match(stdout, /Read-only analysis completed/);
     assert.match(stdout, /ActiveLogDatabaseMB\s*:\s*1/);
     assert.equal((await readFile(logDb)).length, 1024 * 1024);
     assert.equal((await readFile(cacheFile)).length, 256 * 1024);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("Windows optimizer rotates main plus WAL logs and clears exact browser caches", { skip: process.platform !== "win32" }, async () => {
+  const tempRoot = await mkdtemp(join(tmpdir(), "codex-shinobu-optimize-"));
+  const codexHome = join(tempRoot, ".codex");
+  const webProfile = join(tempRoot, "web", "Codex");
+  const sessionFile = join(codexHome, "sessions", "keep.jsonl");
+  const logMain = join(codexHome, "logs_2.sqlite");
+  const logWal = `${logMain}-wal`;
+  const partitionCache = join(webProfile, "Default", "Partitions", "codex-browser-app", "Cache", "entry.bin");
+  try {
+    await mkdir(join(codexHome, "sessions"), { recursive: true });
+    await mkdir(join(webProfile, "Default", "Partitions", "codex-browser-app", "Cache"), { recursive: true });
+    await writeFile(sessionFile, "keep\n");
+    await writeFile(logMain, Buffer.alloc(700 * 1024));
+    await writeFile(logWal, Buffer.alloc(700 * 1024));
+    await writeFile(partitionCache, Buffer.alloc(64 * 1024));
+
+    const scriptPath = new URL("../tools/Optimize-Codex.ps1", import.meta.url).pathname.replace(/^\/(.:)/, "$1");
+    const escapePowerShell = (value) => value.replaceAll("'", "''");
+    const command = [
+      "function global:Get-Process { [CmdletBinding()] param([string[]]$Name) @() }",
+      `& '${escapePowerShell(scriptPath)}' -Mode Optimize -CodexHome '${escapePowerShell(codexHome)}' ` +
+        `-WebProfile '${escapePowerShell(webProfile)}' -AllowCustomPaths -LogThresholdMB 1`,
+    ].join("; ");
+    const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command]);
+
+    assert.match(stdout, /Backed up and rotated 1\.4 MB/);
+    await assert.rejects(readFile(logMain));
+    await assert.rejects(readFile(logWal));
+    await assert.rejects(readFile(partitionCache));
+    assert.equal(await readFile(sessionFile, "utf8"), "keep\n");
+    const backupRoot = join(codexHome, "maintenance-backups");
+    const backupDirs = await (await import("node:fs/promises")).readdir(backupRoot);
+    assert.equal(backupDirs.length, 1);
+    assert.equal((await readFile(join(backupRoot, backupDirs[0], "logs_2.sqlite"))).length, 700 * 1024);
+    assert.equal((await readFile(join(backupRoot, backupDirs[0], "logs_2.sqlite-wal"))).length, 700 * 1024);
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }
@@ -58,6 +110,7 @@ test("built theme is self-contained and exposes the local artwork interface", as
   assert.match(source, /data:image\/webp;base64,/);
   assert.match(source, /选择本地图片/);
   assert.match(source, /根据图片自动配色/);
+  assert.match(source, /性能优先/);
   assert.match(source, /buildPaletteFromPixels/);
   assert.match(source, /api\.fs\.write\(ARTWORK_FILE/);
   assert.doesNotMatch(source, /__THEME_CSS_JSON__|__SHINOBU_HERO_DATA_URI__/);
@@ -118,6 +171,7 @@ test("renderer lifecycle installs and removes one scoped style", async () => {
   assert.equal(appended.length, 1);
   assert.equal(attributes.get("data-shinobu-theme"), "active");
   assert.equal(attributes.get("data-shinobu-motion"), "on");
+  assert.equal(attributes.get("data-shinobu-performance"), "on");
   assert.equal(attributes.get("data-shinobu-auto-palette"), "on");
   assert.equal(properties.get("--shinobu-art-fit"), "cover");
   assert.equal(pages.length, 1);
@@ -127,6 +181,7 @@ test("renderer lifecycle installs and removes one scoped style", async () => {
   assert.equal(appended[0].removed, true);
   assert.equal(attributes.has("data-shinobu-theme"), false);
   assert.equal(attributes.has("data-shinobu-auto-palette"), false);
+  assert.equal(attributes.has("data-shinobu-performance"), false);
   assert.equal(properties.has("--shinobu-art-fit"), false);
 });
 
@@ -220,6 +275,75 @@ test("renderer layout tracking applies and removes an overlay-sidebar offset", a
   assert.equal(threadAttributes.has("data-shinobu-rail-mode"), false);
   assert.equal(threadStyle.values.has("--shinobu-rail-inline-start"), false);
   assert.equal(threadStyle.values.has("--shinobu-rail-inline-size"), false);
+});
+
+test("task header marker is cleared when navigation removes the thread title", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  const rootAttributes = new Map();
+  const rootProperties = new Map();
+  const headerAttributes = new Map();
+  const titleNode = {
+    nodeType: 1,
+    matches: (selector) => selector.includes("[data-thread-title]"),
+  };
+  let titlePresent = true;
+  const header = {
+    matches: (selector) => selector === ".app-header-tint",
+    closest: (selector) => selector === ".app-header-tint" ? header : null,
+    querySelector: () => titlePresent ? titleNode : null,
+    hasAttribute: (name) => headerAttributes.has(name),
+    getAttribute: (name) => headerAttributes.get(name),
+    setAttribute: (name, value) => headerAttributes.set(name, value),
+    removeAttribute: (name) => headerAttributes.delete(name),
+  };
+  const rootElement = {
+    clientWidth: 1280,
+    style: {
+      setProperty: (name, value) => rootProperties.set(name, value),
+      removeProperty: (name) => rootProperties.delete(name),
+    },
+    hasAttribute: (name) => rootAttributes.has(name),
+    getAttribute: (name) => rootAttributes.get(name),
+    setAttribute: (name, value) => rootAttributes.set(name, value),
+    removeAttribute: (name) => rootAttributes.delete(name),
+  };
+  const document = {
+    documentElement: rootElement,
+    body: {},
+    head: { appendChild() {} },
+    createElement: () => ({ dataset: {}, style: {}, remove() {} }),
+    querySelectorAll: (selector) => selector === ".app-header-tint" ? [header] : [],
+  };
+  let mutationCallback = null;
+  class FakeMutationObserver {
+    constructor(callback) { mutationCallback = callback; }
+    observe() {}
+    disconnect() {}
+  }
+  const module = { exports: {} };
+  vm.runInNewContext(source, {
+    module,
+    exports: module.exports,
+    document,
+    MutationObserver: FakeMutationObserver,
+    console,
+  });
+
+  await module.exports.start({
+    process: "renderer",
+    manifest: { id: "io.github.master1st.codex-shinobu-theme" },
+    storage: { get: (_key, fallback) => fallback, set() {} },
+    fs: { exists: async () => false, read: async () => "{}", write: async () => {} },
+    settings: { registerPage() {} },
+    log: { info() {}, warn() {}, error() {} },
+  });
+
+  assert.equal(headerAttributes.get("data-shinobu-thread-header"), "true");
+  titlePresent = false;
+  mutationCallback([{ target: header, addedNodes: [], removedNodes: [titleNode] }]);
+  assert.equal(headerAttributes.has("data-shinobu-thread-header"), false);
+
+  module.exports.stop();
 });
 
 test("automatic palette produces distinct colors with readable text", async () => {
@@ -545,17 +669,65 @@ test("theme CSS scopes stable Codex surfaces and responsive fallbacks", async ()
   assert.match(css, /data-mcp-app-portal-target="true"/);
   assert.match(css, /data-pip-obstacle="thread-footer"/);
   assert.doesNotMatch(css, /radial-gradient\(circle, #fff 0 1px/);
-  assert.match(css, /\.app-header-tint[\s\S]*width: 100%/);
+  const sharedHeaderRule = css.match(/html\[data-shinobu-theme="active"\] \.app-header-tint \{([\s\S]*?)\}/)?.[1] || "";
+  assert.doesNotMatch(sharedHeaderRule, /position:|width:|min-height:|margin:|padding:/);
   assert.match(css, /app-header-tint\[data-app-shell-header-edge-scroll\][\s\S]*position: fixed !important/);
+  assert.match(css, /app-header-tint\[data-app-shell-header-edge-scroll\][\s\S]*top: calc\(var\(--inset-toolbar-sm, 36px\) \+ 8px\) !important/);
   assert.match(css, /app-header-tint\[data-app-shell-header-edge-scroll\][\s\S]*right: 24px !important[\s\S]*left: auto !important/);
   assert.match(css, /app-header-tint\[data-app-shell-header-edge-scroll\][\s\S]*width: clamp\(320px, 33\.333vw, 680px\)/);
-  assert.match(css, /app-header-tint:has\(\[data-thread-title\]\)[\s\S]*height: 44px !important[\s\S]*margin: 8px 0 0 !important/);
+  assert.match(css, /app-header-tint\[data-shinobu-thread-header="true"\][\s\S]*height: 44px !important[\s\S]*margin: 0 !important/);
+  assert.doesNotMatch(css, /app-header-tint:has/);
+  assert.match(css, /data-shinobu-performance="on"[\s\S]*\[data-local-conversation-final-assistant\][\s\S]*backdrop-filter: none !important/);
   assert.match(css, /--shinobu-rail-inline-start/);
   assert.match(css, /--shinobu-rail-inline-size/);
   assert.match(css, /data-shinobu-layout="compact"/);
   assert.match(css, /color-mix\(in srgb, var\(--shinobu-/);
   assert.match(css, /background-image:[\s\S]*var\(--shinobu-art-image\)/);
   assert.doesNotMatch(css, /shinobu-gallery-reserve/);
+});
+
+test("runtime tracking filters noisy transitions and releases detached resize targets", async () => {
+  const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
+  assert.match(source, /transitionend", handleLayoutTransition/);
+  assert.doesNotMatch(source, /transitionend", scheduleReadingRailUpdate/);
+  assert.match(source, /layoutResizeObserver\.unobserve/);
+  assert.match(source, /LAYOUT_TRANSITION_PROPERTIES/);
+  assert.match(source, /if \(node\.closest\?\.\(LAYOUT_SURFACE_SELECTOR\)\) continue/);
+});
+
+test("Windows-only docs and package metadata stay on the same release version", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
+  const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const changelog = await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
+  assert.equal(pkg.version, manifest.version);
+  assert.match(pkg.description, /Windows-only/);
+  assert.match(readme, /只能用于 Windows/);
+  assert.match(readme, /不支持 macOS、Linux\/WSL/);
+  assert.match(readme, new RegExp(`v${manifest.version.replaceAll(".", "\\.")}`));
+  assert.match(
+    readme,
+    new RegExp(
+      `https://github\\.com/Master-1st/codex-shinobu-theme/releases/download/v${manifest.version.replaceAll(".", "\\.")}/` +
+      `codex-shinobu-theme-v${manifest.version.replaceAll(".", "\\.")}-windows\\.zip`,
+    ),
+  );
+  assert.match(changelog, new RegExp(`## ${manifest.version.replaceAll(".", "\\.")}`));
+  for (const path of [
+    "../docs/WINDOWS-USER-GUIDE.md",
+    "../docs/TROUBLESHOOTING.md",
+    "../docs/RELEASE-CHECKLIST.md",
+    "../ASSET-LICENSE.md",
+    "../Analyze-Codex.cmd",
+    "../Uninstall-Theme.cmd",
+    "../.github/workflows/windows.yml",
+  ]) {
+    await readFile(new URL(path, import.meta.url));
+  }
+  const workflow = await readFile(new URL("../.github/workflows/windows.yml", import.meta.url), "utf8");
+  assert.match(workflow, /permissions:\s*\r?\n\s+contents: read/);
+  assert.match(workflow, /run: npm run package/);
+  assert.doesNotMatch(workflow, /run: npm test/);
 });
 
 test("visual QA preview contains every supported state", async () => {

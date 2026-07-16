@@ -1,56 +1,63 @@
 # Codex Windows 优化器
 
-仓库根目录的 `Optimize-Codex.cmd` 用于处理 Codex Desktop 长时间运行后出现的窗口打开慢、切换任务顿一下、内存持续上涨等问题。它是独立维护工具，不依赖小忍主题，也不修改 Codex 程序文件。
+> 仅支持 Windows。该工具维护本机日志与可再生缓存，不修改 Codex 官方程序、`app.asar`、`WindowsApps`、私有数据库结构或未经官方说明的 Electron 参数。
 
-## 它会做什么
+## 先只读分析
 
-1. 显示当前 Codex 进程总内存、活动日志库、可再生缓存、临时文件与任务文件大小。
-2. 关闭 Codex，避免操作正在使用的数据库。
-3. 当 `%USERPROFILE%\.codex\logs_2.sqlite` 超过 128 MB 时，将数据库及其 WAL/SHM 文件移到带时间戳的备份目录，让 Codex 下次启动创建新的日志库。
-4. 清理 Chromium 的网页缓存、代码缓存、GPU 缓存、WebGPU 缓存和着色器缓存。
-5. 重新启动 Codex；如果安装了 Codex++，优先使用 Codex++ 快捷方式。
-
-日志备份默认位于：
-
-```text
-%USERPROFILE%\.codex\maintenance-backups\yyyyMMdd-HHmmss
-```
-
-## 它不会做什么
-
-- 不删除 `sessions`、`archived_sessions`、`attachments`、`skills`、`plugins` 或 `pets`。
-- 不删除 `state_5.sqlite`、登录 Cookie、设置和本地图片。
-- 不修改 Microsoft Store 的 `WindowsApps` 文件。
-- 不关闭硬件加速，也不写入未经官方说明的 Electron 启动参数。
-- 不自动删除大型任务；单个任务超过 50 MB 时只给出提示。
-
-## 最简单的使用方式
-
-1. 保存手头正在编辑的内容。
-2. 双击仓库根目录的 `Optimize-Codex.cmd`。
-3. 阅读提示并输入 `Y`。
-4. 等待 Codex 自动重新启动。
-
-## 只分析，不更改
-
-在 PowerShell 中运行：
+双击 `Analyze-Codex.cmd`，或运行：
 
 ```powershell
 .\tools\Optimize-Codex.ps1 -Mode Analyze
 ```
 
-## 可选的深度临时文件清理
+它会显示 Codex 进程内存、`logs_2.sqlite` 主库/WAL/SHM、可再生网页与 GPU 缓存、临时文件、任务总量，以及超过 50 MB 的大型任务。分析模式不会关闭 Codex 或修改文件。
 
-默认不会清理 `.codex\.tmp`。确认其中没有需要保留的临时构建产物后，可以额外运行：
+## 一键维护
 
-```powershell
-.\tools\Optimize-Codex.ps1 -Mode Optimize -ForceClose -Restart -CleanStaleTemp -TempRetentionDays 30
+1. 保存未发送内容。
+2. 双击 `Optimize-Codex.cmd` 并输入 `Y`。
+3. 按提示正常退出全部 Codex 窗口，再按 Enter。
+4. 如果仍有残留进程，只有输入大写 `FORCE` 才会强制终止；直接按 Enter 会安全取消。
+5. 工具按主库 + WAL + SHM 总大小判断，超过 128 MB 时整体移动到时间戳备份目录。
+6. 清理精确列出的 Chromium、GPU、WebGPU、着色器以及 `codex-browser-app` 分区缓存。
+7. 优先从刚才实际运行的可执行文件重启。
+
+缓存会由 Codex 重建，所以第一次启动可能暂时比平时慢。
+
+## 保留的数据
+
+- `sessions`、`archived_sessions`、任务正文；
+- `attachments`、`skills`、`plugins`、`pets`；
+- `state_5.sqlite`、登录 Cookie、设置；
+- Codex++ 主题、自定义图片；
+- `.codex\.tmp`，除非显式使用 `-CleanStaleTemp`。
+
+## 备份与恢复
+
+日志备份位于：
+
+```text
+%USERPROFILE%\.codex\maintenance-backups\yyyyMMdd-HHmmss
 ```
 
-## 为什么不直接删除聊天记录
+要恢复，请完全退出 Codex，把当前同名日志文件另存一份，再将备份中的 `logs_2.sqlite`、`logs_2.sqlite-wal`、`logs_2.sqlite-shm` 移回 `%USERPROFILE%\.codex`。
 
-任务 JSONL 可能接近或超过 100 MB，打开这类任务时仍可能短暂卡顿，但这些文件就是可恢复的任务记录。优化器把数据安全放在第一位，只报告大型任务。建议先在 Codex 里归档已经完成的超大任务，再按需手工备份。
+## 高级参数
 
-## 恢复日志备份
+预演但不关闭程序或改文件：
 
-正常情况下无需恢复诊断日志。若需要排查问题，请先完全退出 Codex，再将最近备份目录中的 `logs_2.sqlite`、`logs_2.sqlite-wal` 和 `logs_2.sqlite-shm` 移回 `%USERPROFILE%\.codex`。恢复前请先保留现有同名文件的副本。
+```powershell
+.\tools\Optimize-Codex.ps1 -Mode Optimize -WhatIf
+```
+
+额外清理 30 天前的临时文件：
+
+```powershell
+.\tools\Optimize-Codex.ps1 -Mode Optimize -CleanStaleTemp -TempRetentionDays 30
+```
+
+`-CodexHome` 和 `-WebProfile` 默认只允许系统标准位置。测试或便携环境使用其他根目录时，必须显式增加 `-AllowCustomPaths`；清理器仍会拒绝目录联接和重解析点。
+
+## 仍然卡顿时
+
+清缓存不能解决所有问题。单个超大任务、网络/代理、GPU 驱动、沙箱边界或 Codex 本身缺陷需要分别诊断。优化器只报告大型任务，不会代替用户删除记录。

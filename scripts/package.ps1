@@ -28,7 +28,6 @@ New-Item -ItemType Directory -Path (Join-Path $staging 'assets') | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'dist') -Destination (Join-Path $staging 'dist') -Recurse
 Copy-Item -LiteralPath (Join-Path $root 'assets\shinobu-icon.svg') -Destination (Join-Path $staging 'assets\shinobu-icon.svg')
 Copy-Item -LiteralPath (Join-Path $root 'assets\shinobu-hero-safe-landscape.webp') -Destination (Join-Path $staging 'assets\shinobu-hero-safe-landscape.webp')
-Copy-Item -LiteralPath (Join-Path $root 'assets\shinobu-icon.svg') -Destination (Join-Path $staging 'assets\shinobu-icon.svg')
 Copy-Item -LiteralPath (Join-Path $root 'assets\artwork.json') -Destination (Join-Path $staging 'assets\artwork.json')
 Copy-Item -LiteralPath (Join-Path $root 'assets\preview.png') -Destination (Join-Path $staging 'assets\preview.png')
 Copy-Item -LiteralPath (Join-Path $root 'docs') -Destination (Join-Path $staging 'docs') -Recurse
@@ -38,11 +37,14 @@ $files = @(
   'manifest.json',
   'install.ps1',
   'install.cmd',
+  'Analyze-Codex.cmd',
   'Optimize-Codex.cmd',
+  'Uninstall-Theme.cmd',
   'uninstall.ps1',
   'README.md',
   'CHANGELOG.md',
   'NOTICE.md',
+  'ASSET-LICENSE.md',
   'LICENSE'
 )
 foreach ($file in $files) {

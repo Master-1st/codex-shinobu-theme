@@ -1,4 +1,4 @@
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [ValidateSet("Analyze", "Optimize")]
     [string]$Mode = "Analyze",
@@ -7,6 +7,7 @@ param(
     [switch]$ForceClose,
     [switch]$Restart,
     [switch]$CleanStaleTemp,
+    [switch]$AllowCustomPaths,
 
     [ValidateRange(0, 8192)]
     [int]$LogThresholdMB = 128,
@@ -24,6 +25,9 @@ param(
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
+if ($env:OS -ne "Windows_NT") {
+    throw "This optimizer supports Windows only."
+}
 
 function Write-Step {
     param([string]$Message)
@@ -50,6 +54,24 @@ function ConvertTo-MB {
     return [math]::Round($Bytes / 1MB, 1)
 }
 
+function Get-SumValue {
+    param(
+        [object[]]$Items,
+        [string]$Property
+    )
+    [int64]$sum = 0
+    foreach ($item in @($Items)) {
+        if ($null -eq $item) { continue }
+        if ([string]::IsNullOrWhiteSpace($Property)) {
+            $sum += [int64]$item
+        }
+        else {
+            $sum += [int64]$item.$Property
+        }
+    }
+    return $sum
+}
+
 function Assert-SafeChildPath {
     param(
         [string]$Path,
@@ -67,10 +89,17 @@ function Assert-SafeChildPath {
 
 function Get-CodexProcesses {
     $items = @()
-    foreach ($process in (Get-Process -Name ChatGPT, codex -ErrorAction SilentlyContinue)) {
+    foreach ($process in @(Get-Process -Name ChatGPT -ErrorAction SilentlyContinue)) {
         $path = $null
         try { $path = $process.Path } catch {}
-        if ($path -and ($path -match "OpenAI\.Codex|codex-plusplus")) {
+        if (-not $path -or $path -match "OpenAI\.Codex|codex-plusplus") {
+            $items += $process
+        }
+    }
+    foreach ($process in @(Get-Process -Name codex -ErrorAction SilentlyContinue)) {
+        $path = $null
+        try { $path = $process.Path } catch {}
+        if ($path -and $path -match "OpenAI\.Codex|codex-plusplus") {
             $items += $process
         }
     }
@@ -79,7 +108,7 @@ function Get-CodexProcesses {
 
 function Get-CacheTargets {
     param([string]$Profile)
-    return @(
+    $targets = @(
         (Join-Path $Profile "Default\Cache"),
         (Join-Path $Profile "Default\Code Cache"),
         (Join-Path $Profile "Default\GPUCache"),
@@ -89,6 +118,47 @@ function Get-CacheTargets {
         (Join-Path $Profile "ShaderCache"),
         (Join-Path $Profile "GPUPersistentCache")
     )
+    foreach ($browserRoot in @(
+        (Join-Path $Profile "codex-browser-app"),
+        (Join-Path $Profile "Default\Partitions\codex-browser-app")
+    )) {
+        foreach ($relative in @("Cache", "Code Cache", "GPUCache", "DawnGraphiteCache", "DawnWebGPUCache")) {
+            $targets += Join-Path $browserRoot $relative
+        }
+    }
+    return @($targets | Select-Object -Unique)
+}
+
+function Get-LogDatabaseParts {
+    param([string]$CodexRoot)
+    $db = Join-Path $CodexRoot "logs_2.sqlite"
+    return @($db, "$db-wal", "$db-shm")
+}
+
+function Assert-NoReparsePoint {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $item = Get-Item -LiteralPath $Path -Force
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Refusing to process a reparse point: $Path"
+    }
+    $nested = Get-ChildItem -LiteralPath $Path -Force -Recurse -Attributes ReparsePoint -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($nested) {
+        throw "Refusing to recurse through a reparse point: $($nested.FullName)"
+    }
+}
+
+function Assert-FileUnlocked {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return }
+    try {
+        $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+        $stream.Dispose()
+    }
+    catch {
+        throw "Codex still has a file open: $Path"
+    }
 }
 
 function Remove-DisposableDirectory {
@@ -98,6 +168,7 @@ function Remove-DisposableDirectory {
     )
     if (-not (Test-Path -LiteralPath $Path)) { return [int64]0 }
     $safePath = Assert-SafeChildPath -Path $Path -AllowedRoot $AllowedRoot
+    Assert-NoReparsePoint -Path $safePath
     $bytes = Get-DirectorySizeBytes -Path $safePath
     Remove-Item -LiteralPath $safePath -Recurse -Force
     return $bytes
@@ -110,10 +181,11 @@ function Show-Analysis {
     )
 
     $processes = @(Get-CodexProcesses)
-    $workingSet = [int64](($processes | Measure-Object -Property WorkingSet64 -Sum).Sum)
-    $privateMemory = [int64](($processes | Measure-Object -Property PrivateMemorySize64 -Sum).Sum)
-    $logDb = Join-Path $CodexRoot "logs_2.sqlite"
-    $logBytes = Get-FileSizeBytes -Path $logDb
+    $workingSet = Get-SumValue -Items $processes -Property "WorkingSet64"
+    $privateMemory = Get-SumValue -Items $processes -Property "PrivateMemorySize64"
+    $logParts = Get-LogDatabaseParts -CodexRoot $CodexRoot
+    $logPartBytes = @($logParts | ForEach-Object { Get-FileSizeBytes -Path $_ })
+    $logBytes = Get-SumValue -Items $logPartBytes
     $cacheBytes = [int64]0
     foreach ($target in (Get-CacheTargets -Profile $Profile)) {
         $cacheBytes += Get-DirectorySizeBytes -Path $target
@@ -124,7 +196,7 @@ function Show-Analysis {
     if (Test-Path -LiteralPath $sessionRoot) {
         $sessionFiles = @(Get-ChildItem -LiteralPath $sessionRoot -Recurse -Force -File -Filter "*.jsonl" -ErrorAction SilentlyContinue)
     }
-    $sessionBytes = [int64](($sessionFiles | Measure-Object -Property Length -Sum).Sum)
+    $sessionBytes = Get-SumValue -Items $sessionFiles -Property "Length"
 
     Write-Step "Read-only analysis completed"
     [pscustomobject]@{
@@ -132,6 +204,9 @@ function Show-Analysis {
         WorkingSetMB = ConvertTo-MB $workingSet
         PrivateMemoryMB = ConvertTo-MB $privateMemory
         ActiveLogDatabaseMB = ConvertTo-MB $logBytes
+        LogMainMB = ConvertTo-MB $logPartBytes[0]
+        LogWalMB = ConvertTo-MB $logPartBytes[1]
+        LogShmMB = ConvertTo-MB $logPartBytes[2]
         DisposableWebCacheMB = ConvertTo-MB $cacheBytes
         TemporaryFilesMB = ConvertTo-MB $tempBytes
         SessionFiles = $sessionFiles.Count
@@ -151,7 +226,8 @@ function Stop-CodexSafely {
     $processes = @(Get-CodexProcesses)
     if ($processes.Count -eq 0) { return $null }
 
-    $mainPath = ($processes | Where-Object ProcessName -eq "ChatGPT" | Select-Object -First 1).Path
+    $mainPath = $null
+    try { $mainPath = ($processes | Where-Object ProcessName -eq "ChatGPT" | Select-Object -First 1).Path } catch {}
     if (-not $AllowForce) {
         throw "Codex is still running. Close every Codex window or use -ForceClose."
     }
@@ -169,6 +245,9 @@ function Stop-CodexSafely {
     if ($remaining.Count -gt 0) {
         throw "Some Codex processes did not exit. Restart Windows before running the optimizer again."
     }
+    foreach ($part in (Get-LogDatabaseParts -CodexRoot $CodexHome)) {
+        Assert-FileUnlocked -Path $part
+    }
     return $mainPath
 }
 
@@ -178,10 +257,12 @@ function Rotate-LogDatabase {
         [int]$ThresholdMB
     )
 
-    $db = Join-Path $CodexRoot "logs_2.sqlite"
-    $bytes = Get-FileSizeBytes -Path $db
+    $parts = Get-LogDatabaseParts -CodexRoot $CodexRoot
+    $db = $parts[0]
+    $partBytes = @($parts | ForEach-Object { Get-FileSizeBytes -Path $_ })
+    $bytes = Get-SumValue -Items $partBytes
     if ($bytes -lt ($ThresholdMB * 1MB)) {
-        Write-Step "The active log database is $(ConvertTo-MB $bytes) MB, below the $ThresholdMB MB threshold"
+        Write-Step "The active log database set is $(ConvertTo-MB $bytes) MB, below the $ThresholdMB MB threshold"
         return $null
     }
 
@@ -189,8 +270,7 @@ function Rotate-LogDatabase {
     $backupRoot = Join-Path $CodexRoot "maintenance-backups\$stamp"
     New-Item -ItemType Directory -Path $backupRoot -Force | Out-Null
 
-    foreach ($suffix in @("", "-wal", "-shm")) {
-        $source = $db + $suffix
+    foreach ($source in $parts) {
         if (Test-Path -LiteralPath $source) {
             Move-Item -LiteralPath $source -Destination $backupRoot -Force
         }
@@ -207,6 +287,7 @@ function Remove-StaleTempFiles {
     $tempRoot = Join-Path $CodexRoot ".tmp"
     if (-not (Test-Path -LiteralPath $tempRoot)) { return [int64]0 }
     $safeRoot = [IO.Path]::GetFullPath($tempRoot).TrimEnd("\")
+    Assert-NoReparsePoint -Path $safeRoot
     $cutoff = (Get-Date).AddDays(-$RetentionDays)
     $bytes = [int64]0
 
@@ -225,6 +306,12 @@ function Remove-StaleTempFiles {
 
 function Start-CodexAgain {
     param([string]$PreviousExecutable)
+
+    if ($PreviousExecutable -and (Test-Path -LiteralPath $PreviousExecutable)) {
+        Start-Process -FilePath $PreviousExecutable
+        Write-Step "Restarted from the executable that was previously running"
+        return
+    }
 
     $shortcutCandidates = @(
         (Join-Path ([Environment]::GetFolderPath("Desktop")) "Codex++.lnk"),
@@ -246,17 +333,19 @@ function Start-CodexAgain {
         return
     }
 
-    if ($PreviousExecutable -and (Test-Path -LiteralPath $PreviousExecutable)) {
-        Start-Process -FilePath $PreviousExecutable
-        Write-Step "Restarted from the previous executable"
-        return
-    }
-
     Write-Warning "Optimization finished, but no Codex launcher was found. Start Codex manually."
 }
 
 $CodexHome = [IO.Path]::GetFullPath($CodexHome)
 $WebProfile = [IO.Path]::GetFullPath($WebProfile)
+$defaultCodexHome = [IO.Path]::GetFullPath((Join-Path $env:USERPROFILE ".codex"))
+$defaultWebProfile = [IO.Path]::GetFullPath((Join-Path $env:APPDATA "Codex\web\Codex"))
+if (-not $AllowCustomPaths) {
+    if (-not $CodexHome.Equals($defaultCodexHome, [StringComparison]::OrdinalIgnoreCase) -or
+        -not $WebProfile.Equals($defaultWebProfile, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Custom maintenance roots require -AllowCustomPaths."
+    }
+}
 
 if ($Mode -eq "Analyze") {
     Show-Analysis -CodexRoot $CodexHome -Profile $WebProfile
@@ -264,8 +353,9 @@ if ($Mode -eq "Analyze") {
 }
 
 if ($Interactive) {
-    Write-Host "This closes Codex, rotates oversized diagnostic logs, and clears disposable web/GPU caches." -ForegroundColor Yellow
+    Write-Host "Windows only. This closes Codex, rotates oversized diagnostic logs, and clears disposable web/GPU caches." -ForegroundColor Yellow
     Write-Host "It does not delete sign-in data, sessions, attachments, skills, settings, or custom artwork." -ForegroundColor Yellow
+    Write-Host "Save any unsent text first. The first launch after cache cleanup can be temporarily slower." -ForegroundColor Yellow
     $answer = Read-Host "Type Y to continue"
     if ($answer -notmatch "^[Yy]$") {
         Write-Host "Cancelled."
@@ -274,23 +364,61 @@ if ($Interactive) {
 }
 
 Show-Analysis -CodexRoot $CodexHome -Profile $WebProfile
-$previousExecutable = Stop-CodexSafely -AllowForce:$ForceClose
-$backup = Rotate-LogDatabase -CodexRoot $CodexHome -ThresholdMB $LogThresholdMB
-
-$cacheBytes = [int64]0
-foreach ($target in (Get-CacheTargets -Profile $WebProfile)) {
-    $cacheBytes += Remove-DisposableDirectory -Path $target -AllowedRoot $WebProfile
+$allowForce = [bool]$ForceClose
+if ($Interactive -and @(Get-CodexProcesses).Count -gt 0) {
+    Read-Host "Close every Codex window normally, then press Enter"
+    if (@(Get-CodexProcesses).Count -gt 0) {
+        $forceAnswer = Read-Host "Codex is still running. Type FORCE to terminate it, or press Enter to cancel"
+        if ($forceAnswer -cne "FORCE") {
+            Write-Host "Cancelled without changing files."
+            exit 0
+        }
+        $allowForce = $true
+    }
 }
-Write-Step "Cleared $(ConvertTo-MB $cacheBytes) MB of disposable web/GPU caches"
 
-if ($CleanStaleTemp) {
-    $tempBytes = Remove-StaleTempFiles -CodexRoot $CodexHome -RetentionDays $TempRetentionDays
-    Write-Step "Cleared $(ConvertTo-MB $tempBytes) MB of temporary files older than $TempRetentionDays days"
+$maintenanceTarget = "running Codex processes, $CodexHome, and $WebProfile"
+$maintenanceApproved = $PSCmdlet.ShouldProcess(
+    $maintenanceTarget,
+    "Close Codex and perform the requested local maintenance"
+)
+if (-not $maintenanceApproved) {
+    if ($WhatIfPreference) {
+        Write-Step "WhatIf completed; Codex was not closed and no files were changed"
+    }
+    else {
+        Write-Step "Confirmation declined; Codex was not closed and no files were changed"
+    }
+    exit 0
 }
 
-Write-Host "Optimization completed. Sessions and sign-in data were preserved." -ForegroundColor Green
-if ($backup) { Write-Host "Log backup: $backup" }
+# -Confirm lowers ConfirmPreference for nested cmdlets. The approval above is the
+# single transaction confirmation, so suppress downstream prompts before Codex
+# is closed; otherwise a later Remove-Item prompt could appear after shutdown.
+$previousConfirmPreference = $ConfirmPreference
+$ConfirmPreference = "None"
+try {
+    $previousExecutable = Stop-CodexSafely -AllowForce:$allowForce
+    $backup = Rotate-LogDatabase -CodexRoot $CodexHome -ThresholdMB $LogThresholdMB
 
-if ($Restart) {
-    Start-CodexAgain -PreviousExecutable $previousExecutable
+    $cacheBytes = [int64]0
+    foreach ($target in (Get-CacheTargets -Profile $WebProfile)) {
+        $cacheBytes += Remove-DisposableDirectory -Path $target -AllowedRoot $WebProfile
+    }
+    Write-Step "Cleared $(ConvertTo-MB $cacheBytes) MB of disposable web/GPU caches"
+
+    if ($CleanStaleTemp) {
+        $tempBytes = Remove-StaleTempFiles -CodexRoot $CodexHome -RetentionDays $TempRetentionDays
+        Write-Step "Cleared $(ConvertTo-MB $tempBytes) MB of temporary files older than $TempRetentionDays days"
+    }
+
+    Write-Host "Optimization completed. Sessions and sign-in data were preserved." -ForegroundColor Green
+    if ($backup) { Write-Host "Log backup: $backup" }
+
+    if ($Restart) {
+        Start-CodexAgain -PreviousExecutable $previousExecutable
+    }
+}
+finally {
+    $ConfirmPreference = $previousConfirmPreference
 }

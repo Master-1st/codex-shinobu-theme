@@ -35,6 +35,21 @@ let observedLayoutElements = null;
 let layoutFrameId = null;
 let layoutTimeoutIds = [];
 
+const LAYOUT_STRUCTURE_SELECTOR =
+  ".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface, " +
+  ".app-header-tint, [data-thread-title], [data-thread-title-trigger], [data-app-shell-header-edge-scroll]";
+const LAYOUT_SURFACE_SELECTOR =
+  ".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface, .app-header-tint";
+const LAYOUT_TRANSITION_PROPERTIES = new Set([
+  "width",
+  "min-width",
+  "max-width",
+  "left",
+  "right",
+  "transform",
+  "grid-template-columns",
+]);
+
 const READING_RAIL = Object.freeze({
   gap: 24,
   compactGap: 16,
@@ -131,10 +146,67 @@ function visibleSidebars(viewportWidth) {
   return result;
 }
 
-function observeLayoutElement(element) {
-  if (!layoutResizeObserver || !observedLayoutElements || !element || observedLayoutElements.has(element)) return;
-  observedLayoutElements.add(element);
-  layoutResizeObserver.observe(element);
+function setAttributeIfChanged(element, name, value) {
+  if (!element?.setAttribute) return;
+  if (element.getAttribute?.(name) === value) return;
+  element.setAttribute(name, value);
+}
+
+function setStyleIfChanged(element, name, value) {
+  if (!element?.style?.setProperty) return;
+  if (element.style.getPropertyValue?.(name) === value) return;
+  element.style.setProperty(name, value);
+}
+
+function syncObservedLayoutElements(elements) {
+  if (!layoutResizeObserver) return;
+  const next = new Set([...elements].filter(Boolean));
+  for (const element of observedLayoutElements || []) {
+    if (!next.has(element)) layoutResizeObserver.unobserve?.(element);
+  }
+  for (const element of next) {
+    if (!observedLayoutElements?.has(element)) layoutResizeObserver.observe(element);
+  }
+  observedLayoutElements = next;
+}
+
+function mutationAffectsLayout(records) {
+  for (const record of records) {
+    for (const node of record.addedNodes || []) {
+      if (node?.nodeType !== 1) continue;
+      if (node.matches?.(LAYOUT_STRUCTURE_SELECTOR)) return true;
+      // Streaming replies mount many tiny nodes inside the existing thread. A
+      // ResizeObserver already covers the surrounding layout, so do not scan
+      // every streamed message subtree for structural selectors.
+      if (node.closest?.(LAYOUT_SURFACE_SELECTOR)) continue;
+      if (node.querySelector?.(LAYOUT_STRUCTURE_SELECTOR)) return true;
+    }
+
+    const targetIsThreadHeader = record.target?.matches?.(".app-header-tint") ||
+      record.target?.closest?.(".app-header-tint");
+    const targetIsLayoutSurface = record.target?.matches?.(LAYOUT_SURFACE_SELECTOR) ||
+      record.target?.closest?.(LAYOUT_SURFACE_SELECTOR);
+    for (const node of record.removedNodes || []) {
+      if (node?.nodeType !== 1) continue;
+      if (node.matches?.(LAYOUT_STRUCTURE_SELECTOR)) return true;
+
+      // Route changes remove the thread-title subtree from a reused header.
+      // Re-evaluate that small surface so its marker cannot survive on a
+      // non-thread page. Keep skipping detached message subtrees from the
+      // streaming conversation surface, just as the added-node path does.
+      if (targetIsThreadHeader) return true;
+      if (targetIsLayoutSurface || node.closest?.(LAYOUT_SURFACE_SELECTOR)) continue;
+      if (node.querySelector?.(LAYOUT_STRUCTURE_SELECTOR)) return true;
+    }
+  }
+  return false;
+}
+
+function handleLayoutTransition(event) {
+  if (!LAYOUT_TRANSITION_PROPERTIES.has(String(event?.propertyName || ""))) return;
+  const target = event?.target;
+  if (!target?.matches?.(".app-shell-left-panel, .main-surface, .browser-main-surface")) return;
+  scheduleReadingRailUpdate();
 }
 
 function updateReadingRail() {
@@ -146,18 +218,15 @@ function updateReadingRail() {
   );
   if (viewportWidth < 1) return;
 
+  // Read every rectangle before changing attributes or inline styles. Keeping
+  // DOM reads and writes in separate phases avoids forced synchronous layout.
+  const headers = [...document.querySelectorAll(".app-header-tint")];
+  const threads = [...document.querySelectorAll(".thread-scroll-container")];
+  const surfaces = [...document.querySelectorAll(".main-surface, .browser-main-surface")];
   const sidebars = visibleSidebars(viewportWidth);
   const sidebarRight = sidebars.reduce((right, item) => Math.max(right, Math.min(viewportWidth, item.rect.right)), 0);
-  for (const header of document.querySelectorAll(".app-header-tint")) {
-    if (header.hasAttribute?.("data-app-shell-header-edge-scroll") ||
-        header.querySelector?.("[data-thread-title], [data-thread-title-trigger]")) {
-      header.setAttribute?.("data-shinobu-thread-header", "true");
-    } else {
-      header.removeAttribute?.("data-shinobu-thread-header");
-    }
-  }
   const entries = [];
-  for (const thread of document.querySelectorAll(".thread-scroll-container")) {
+  for (const thread of threads) {
     const rect = elementRect(thread);
     if (!rect || rect.width < 1 || rect.height < 1) continue;
     const layout = calculateReadingRail({
@@ -166,28 +235,39 @@ function updateReadingRail() {
       threadRight: rect.right,
       sidebarRight: sidebarRight > rect.left ? sidebarRight : 0,
     });
-    thread.style?.setProperty("--shinobu-rail-inline-start", `${layout.left.toFixed(2)}px`);
-    thread.style?.setProperty("--shinobu-rail-inline-size", `${layout.width.toFixed(2)}px`);
-    thread.setAttribute?.("data-shinobu-rail-mode", layout.mode);
     entries.push({ thread, rect, layout });
-    observeLayoutElement(thread);
+  }
+
+  syncObservedLayoutElements([
+    root,
+    ...sidebars.map((item) => item.element),
+    ...threads,
+    ...surfaces,
+  ]);
+
+  for (const header of headers) {
+    const isThreadHeader = header.hasAttribute?.("data-app-shell-header-edge-scroll") ||
+      header.querySelector?.("[data-thread-title], [data-thread-title-trigger]");
+    if (isThreadHeader) setAttributeIfChanged(header, "data-shinobu-thread-header", "true");
+    else if (header.hasAttribute?.("data-shinobu-thread-header")) header.removeAttribute("data-shinobu-thread-header");
+  }
+
+  for (const { thread, layout } of entries) {
+    setStyleIfChanged(thread, "--shinobu-rail-inline-start", `${layout.left.toFixed(2)}px`);
+    setStyleIfChanged(thread, "--shinobu-rail-inline-size", `${layout.width.toFixed(2)}px`);
+    setAttributeIfChanged(thread, "data-shinobu-rail-mode", layout.mode);
   }
 
   if (!entries.length) {
-    root.removeAttribute("data-shinobu-layout");
+    if (root.hasAttribute?.("data-shinobu-layout")) root.removeAttribute("data-shinobu-layout");
     return;
   }
 
   entries.sort((first, second) => first.rect.left - second.rect.left);
   const primary = entries[0];
-  root.setAttribute("data-shinobu-layout", primary.layout.mode);
-  root.style.setProperty("--shinobu-primary-rail-inline-start", `${primary.layout.left.toFixed(2)}px`);
-  root.style.setProperty("--shinobu-primary-rail-inline-size", `${primary.layout.width.toFixed(2)}px`);
-
-  for (const item of sidebars) observeLayoutElement(item.element);
-  for (const surface of document.querySelectorAll(".main-surface, .browser-main-surface")) {
-    observeLayoutElement(surface);
-  }
+  setAttributeIfChanged(root, "data-shinobu-layout", primary.layout.mode);
+  setStyleIfChanged(root, "--shinobu-primary-rail-inline-start", `${primary.layout.left.toFixed(2)}px`);
+  setStyleIfChanged(root, "--shinobu-primary-rail-inline-size", `${primary.layout.width.toFixed(2)}px`);
 }
 
 function scheduleReadingRailUpdate() {
@@ -204,29 +284,19 @@ function scheduleReadingRailUpdate() {
 
 function startLayoutTracking() {
   stopLayoutTracking();
-  observedLayoutElements = new WeakSet();
+  observedLayoutElements = new Set();
   if (typeof ResizeObserver === "function") {
     layoutResizeObserver = new ResizeObserver(scheduleReadingRailUpdate);
-    observeLayoutElement(rootElement());
   }
   if (typeof MutationObserver === "function" && document.body) {
     layoutMutationObserver = new MutationObserver((records) => {
-      for (const record of records) {
-        for (const node of record.addedNodes) {
-          if (node?.nodeType !== 1) continue;
-          if (node.matches?.(".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface, .app-header-tint, [data-thread-title], [data-thread-title-trigger], [data-app-shell-header-edge-scroll]") ||
-              node.querySelector?.(".thread-scroll-container, .app-shell-left-panel, .main-surface, .browser-main-surface, .app-header-tint, [data-thread-title], [data-thread-title-trigger], [data-app-shell-header-edge-scroll]")) {
-            scheduleReadingRailUpdate();
-            return;
-          }
-        }
-      }
+      if (mutationAffectsLayout(records)) scheduleReadingRailUpdate();
     });
     layoutMutationObserver.observe(document.body, { childList: true, subtree: true });
   }
   if (typeof window !== "undefined") {
     window.addEventListener?.("resize", scheduleReadingRailUpdate, { passive: true });
-    window.addEventListener?.("transitionend", scheduleReadingRailUpdate, true);
+    window.addEventListener?.("transitionend", handleLayoutTransition, true);
   }
   updateReadingRail();
   if (typeof setTimeout === "function") {
@@ -263,7 +333,7 @@ function stopLayoutTracking() {
       window.cancelAnimationFrame(layoutFrameId);
     }
     window.removeEventListener?.("resize", scheduleReadingRailUpdate);
-    window.removeEventListener?.("transitionend", scheduleReadingRailUpdate, true);
+    window.removeEventListener?.("transitionend", handleLayoutTransition, true);
   }
   layoutFrameId = null;
   clearReadingRailState();
@@ -517,6 +587,7 @@ function removeThemeState() {
   const root = rootElement();
   root.removeAttribute("data-shinobu-theme");
   root.removeAttribute("data-shinobu-motion");
+  root.removeAttribute("data-shinobu-performance");
   root.removeAttribute("data-shinobu-artwork");
   root.removeAttribute("data-shinobu-auto-palette");
   root.style.removeProperty("--shinobu-art-image");
@@ -530,12 +601,14 @@ function applyThemeState(api) {
   const artworkEnabled = api.storage.get("artworkEnabled", true) !== false;
   const autoPaletteEnabled = api.storage.get("autoPaletteEnabled", true) !== false;
   const motionEnabled = api.storage.get("motionEnabled", true) !== false;
+  const performanceEnabled = api.storage.get("performanceEnabled", true) !== false;
   const fit = api.storage.get("artworkFit", "cover") === "contain" ? "contain" : "cover";
   const positionKey = api.storage.get("artworkPosition", "right");
   const position = POSITION_VALUES[positionKey] || POSITION_VALUES.right;
 
   root.setAttribute("data-shinobu-theme", "active");
   root.setAttribute("data-shinobu-motion", motionEnabled ? "on" : "off");
+  root.setAttribute("data-shinobu-performance", performanceEnabled ? "on" : "off");
   root.setAttribute("data-shinobu-artwork", artworkEnabled ? "on" : "off");
   root.setAttribute("data-shinobu-auto-palette", autoPaletteEnabled ? "on" : "off");
   root.style.setProperty("--shinobu-art-fit", fit);
@@ -773,6 +846,15 @@ async function renderSettings(container, api) {
     },
   );
   card.appendChild(settingRow("轻微动效", "控制甜甜圈漂浮和输入框呼吸光。", motionSwitch));
+
+  const performanceSwitch = switchControl(
+    api.storage.get("performanceEnabled", true) !== false,
+    async (enabled) => {
+      api.storage.set("performanceEnabled", enabled);
+      applyThemeState(api);
+    },
+  );
+  card.appendChild(settingRow("性能优先", "减少逐条消息的毛玻璃和持续动画，长对话更流畅。", performanceSwitch));
 
   const fitSelect = selectControl(
     api.storage.get("artworkFit", "cover"),
