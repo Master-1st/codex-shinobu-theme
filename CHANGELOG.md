@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.2.0 — 2026-07-16
+
+- Marks the project and release package as Windows-only and adds a complete Windows user guide, troubleshooting guide, release checklist, read-only analyzer, and double-click uninstaller.
+- Stops applying shared geometry overrides to every Codex header; the full-width app menu keeps native layout while the task title uses the verified 36 px compact-toolbar inset on the right.
+- Adds a default performance mode that removes message-level backdrop passes and continuous focus animation while retaining translucent surfaces.
+- Narrows mutation and transition tracking, batches layout reads before writes, avoids unchanged DOM writes, and unobserves detached layout nodes.
+- Clears the compact task-header marker when navigation removes the thread title, preventing the right-side title style from leaking onto non-thread pages.
+- Hardens install and uninstall paths against a modified manifest ID, repairs shortcuts only to known Codex++ mirrors, and installs complete linked documentation.
+- Rejects junction/reparse-point trees before uninstalling theme or artwork data, with a full preflight before either directory can be removed.
+- Counts the diagnostic log main/WAL/SHM files together, covers Codex browser partitions, rejects reparse-point cleanup, adds `-WhatIf`, and completes one transaction confirmation before any Codex process can be closed.
+- Adds Windows CI and stronger installer, packaging, checksum, version, path-boundary, and optimizer regression coverage.
+
+## 1.1.4 — 2026-07-16
+
+- Restores Codex's fixed positioning for the compact task header instead of leaving the native top offset on a relative element.
+- Removes the duplicated header flow height that created a large empty strip above the conversation.
+- Pins the 44 px task header 24 px from the right edge, with a 16 px safe margin on narrow windows.
+
+## 1.1.3 — 2026-07-16
+
+- Targets Codex's real `data-app-shell-header-edge-scroll` task-header marker instead of relying only on a nested title element.
+- Keeps the task title bar right-aligned while reducing it to roughly one third of the viewport, capped at 680 px.
+- Preserves a compact 320 px title bar on narrow windows so the title and controls remain usable.
+
+## 1.1.2 — 2026-07-16
+
+- Restores the application menu/title chrome to a full-width translucent bar.
+- Right-aligns the task title glass bar while centering conversations and the composer in the visible workspace.
+- Keeps centered content outside an overlay sidebar, but allows tasteful overlap with the character artwork.
+- Reduces reply, user bubble, composer, and task-header opacity for a softer glass effect.
+
+## 1.1.1 — 2026-07-16
+
+- Fixes restored/smaller Codex windows where the expanded sidebar overlays the work area and clips the left side of replies.
+- Measures the visible sidebar and thread rectangles at runtime, then keeps conversations and composers on one aligned reading rail outside the overlap.
+- Adds a compact fallback with a stronger readability veil when the character-safe rail becomes too narrow.
+- Recalculates after window resize, relevant surface mounts, and sidebar transitions without polling or touching the avatar overlay.
+- Repairs stale Codex++ shortcuts whose `ChatGPT.exe` target points to a removed user profile or app mirror.
+- Removes the extra white-dot overlay, switches the built-in artwork to seamless `cover` rendering, and keeps `contain` available for complete originals.
+- Replaces the full-width white task header with a compact glass title bar aligned to the reading rail.
+- Expands automated coverage to 16 tests and adds a restored-window overlay-sidebar visual QA state.
+
+## 1.1.0 — 2026-07-16
+
+- Replaces the portrait background with a 16:9 safe-area illustration and moves the artwork to one continuous root-canvas layer.
+- Keeps conversation, approvals, long output, and composers inside a 32vw reading rail from 800 px upward; smaller windows use a softened background.
+- Adds on-device automatic palette extraction for imported PNG, JPG, and WebP artwork, including readable text contrast, a settings preview, disable/reset behavior, and legacy-image migration.
+- Adds repeatable visual QA for normal, split, long-output, approval, menu, dialog, settings, artwork-off, and responsive states.
+- Validates all theme selectors against Codex Desktop `26.707.12708.0` and leaves the pet/avatar overlay renderer untouched.
+- Adds a standalone Windows optimizer that safely rotates oversized diagnostic logs, clears disposable Chromium/GPU caches, and preserves sessions and sign-in data.
+- Expands automated coverage to 14 tests, including palette failure fallback, release-package completeness, and Windows installer/optimizer safety.
+
 ## 1.0.0 — 2026-07-16
 
 - First Windows release.

@@ -8,7 +8,7 @@ The MIT License covers the software in this repository. It does not grant any
 rights to third-party character names, trademarks, logos, or official artwork.
 
 The project owner supplied the reference image used for this theme. The bundled
-portrait background was generated from that reference with OpenAI's built-in
+16:9 landscape background was generated from that reference with OpenAI's built-in
 image-generation tool. The reference image, generated derivative, character
 design, and any required redistribution permission are not covered by the MIT
 software license. The optional local-artwork importer exists so a user can
@@ -19,3 +19,5 @@ tweak.
 Codex++ is a separate MIT-licensed project maintained at
 <https://github.com/b-nnett/codex-plusplus>. It is a runtime dependency and is
 not bundled in this repository.
+
+See ASSET-LICENSE.md for the repository's per-asset boundary.

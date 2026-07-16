@@ -1,0 +1,28 @@
+name: Windows validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-package:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate and build Windows release package
+        run: npm run package
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-shinobu-theme-windows
+          path: |
+            output/*-windows.zip
+            output/*-windows.zip.sha256
+          if-no-files-found: error

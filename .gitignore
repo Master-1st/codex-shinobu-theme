@@ -1,5 +1,6 @@
 node_modules/
 output/
+artifacts/
 preview/index.html
 dist/
 *.log
@@ -7,4 +8,3 @@ dist/
 Thumbs.db
 .edge-preview-profile/
 .gh-auth-*
-/.github/workflows/

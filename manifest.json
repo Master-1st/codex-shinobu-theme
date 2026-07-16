@@ -1,9 +1,9 @@
 {
   "id": "io.github.master1st.codex-shinobu-theme",
   "name": "Shinobu Theme / 小忍主题",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "githubRepo": "Master-1st/codex-shinobu-theme",
-  "description": "物语系列小忍风格的 Codex++ 主题，支持在本地导入自有原版图片。",
+  "description": "仅用于 Windows 版 Codex Desktop + Codex++ 的小忍主题，支持本地导入自有图片。",
   "author": {
     "name": "Master-1st",
     "url": "https://github.com/Master-1st"
