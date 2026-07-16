@@ -36,7 +36,6 @@ let layoutFrameId = null;
 let layoutTimeoutIds = [];
 
 const READING_RAIL = Object.freeze({
-  safeRightRatio: 0.56,
   gap: 24,
   compactGap: 16,
   minimumSafeWidth: 360,
@@ -71,17 +70,18 @@ function calculateReadingRail({ viewportWidth, threadLeft, threadRight, sidebarR
   const rightEdge = clamp(finiteNumber(threadRight, viewport), leftEdge, viewport);
   const visibleSidebarRight = clamp(finiteNumber(sidebarRight), 0, viewport);
   const safeStart = Math.max(leftEdge + READING_RAIL.gap, visibleSidebarRight + READING_RAIL.gap);
-  const safeRight = Math.min(rightEdge - READING_RAIL.gap, viewport * READING_RAIL.safeRightRatio);
+  const safeRight = Math.max(safeStart, rightEdge - READING_RAIL.gap);
   const safeWidth = safeRight - safeStart;
 
   if (safeWidth >= READING_RAIL.minimumSafeWidth) {
     const width = Math.min(READING_RAIL.maximumWidth, safeWidth);
+    const absoluteLeft = safeStart + Math.max(0, (safeWidth - width) / 2);
     return {
-      mode: "rail",
-      left: Math.max(READING_RAIL.gap, safeStart - leftEdge),
+      mode: "centered",
+      left: Math.max(READING_RAIL.gap, absoluteLeft - leftEdge),
       width,
-      absoluteLeft: safeStart,
-      absoluteRight: safeStart + width,
+      absoluteLeft,
+      absoluteRight: absoluteLeft + width,
     };
   }
 
@@ -148,6 +148,13 @@ function updateReadingRail() {
 
   const sidebars = visibleSidebars(viewportWidth);
   const sidebarRight = sidebars.reduce((right, item) => Math.max(right, Math.min(viewportWidth, item.rect.right)), 0);
+  for (const header of document.querySelectorAll(".app-header-tint")) {
+    if (header.querySelector?.("[data-thread-title]")) {
+      header.setAttribute?.("data-shinobu-thread-header", "true");
+    } else {
+      header.removeAttribute?.("data-shinobu-thread-header");
+    }
+  }
   const entries = [];
   for (const thread of document.querySelectorAll(".thread-scroll-container")) {
     const rect = elementRect(thread);
@@ -236,6 +243,9 @@ function clearReadingRailState() {
     element.removeAttribute?.("data-shinobu-rail-mode");
     element.style?.removeProperty("--shinobu-rail-inline-start");
     element.style?.removeProperty("--shinobu-rail-inline-size");
+  }
+  for (const header of document.querySelectorAll(".app-header-tint")) {
+    header.removeAttribute?.("data-shinobu-thread-header");
   }
 }
 

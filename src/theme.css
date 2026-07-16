@@ -160,16 +160,31 @@ html[data-shinobu-theme="active"] .app-header-tint {
   position: relative;
   z-index: 12;
   box-sizing: border-box;
-  width: min(860px, var(--shinobu-primary-rail-inline-size, calc(56vw - 48px))) !important;
-  max-width: calc(100% - 32px) !important;
-  min-height: 44px;
-  margin: 8px 0 6px var(--shinobu-primary-rail-inline-start, 24px) !important;
-  padding: 0 16px !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 52px;
+  margin: 0 !important;
+  padding: 0 24px !important;
   color: var(--shinobu-ink) !important;
-  background: linear-gradient(105deg, color-mix(in srgb, var(--shinobu-cream) 88%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 80%, transparent) 68%, color-mix(in srgb, var(--shinobu-yellow-soft) 70%, transparent)) !important;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--shinobu-cream) 78%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 68%, transparent) 62%, color-mix(in srgb, var(--shinobu-yellow-soft) 56%, transparent)) !important;
+  border: 0 !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--shinobu-mint) 38%, transparent) !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 -1px #fff8, 0 7px 18px #6d76521f !important;
+  backdrop-filter: blur(18px) saturate(1.06);
+}
+
+html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"],
+html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
+  width: min(860px, var(--shinobu-primary-rail-inline-size, calc(100% - 48px)), calc(100% - 48px)) !important;
+  max-width: calc(100% - 48px) !important;
+  min-height: 44px;
+  margin: 8px 24px 6px auto !important;
+  padding: 0 16px !important;
+  background: linear-gradient(105deg, color-mix(in srgb, var(--shinobu-cream) 72%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 64%, transparent) 68%, color-mix(in srgb, var(--shinobu-yellow-soft) 58%, transparent)) !important;
   border: 1px solid color-mix(in srgb, var(--shinobu-mint) 42%, transparent) !important;
   border-radius: 15px !important;
-  box-shadow: inset 0 1px #fffc, 0 8px 22px #6d765224 !important;
+  box-shadow: inset 0 1px #fffa, 0 8px 22px #6d765224 !important;
   backdrop-filter: blur(20px) saturate(1.08);
 }
 
@@ -210,11 +225,11 @@ html[data-shinobu-theme="active"] .thread-scroll-container {
 
 html[data-shinobu-theme="active"] .composer-surface-chrome {
   color: var(--shinobu-ink) !important;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--shinobu-cream) 97%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 95%, transparent)) !important;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--shinobu-cream) 78%, transparent), color-mix(in srgb, var(--shinobu-mint-soft) 72%, transparent)) !important;
   border: 1px solid color-mix(in srgb, var(--shinobu-mint) 66%, transparent) !important;
   border-radius: 20px !important;
   box-shadow: inset 0 1px #fff, 0 12px 28px #6d765233, 0 0 20px color-mix(in srgb, var(--shinobu-blush) 12%, transparent) !important;
-  backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(20px) saturate(1.08);
 }
 
 html[data-shinobu-theme="active"][data-shinobu-motion="on"] .composer-surface-chrome:focus-within {
@@ -223,10 +238,11 @@ html[data-shinobu-theme="active"][data-shinobu-motion="on"] .composer-surface-ch
 
 html[data-shinobu-theme="active"] [data-user-message-bubble] {
   color: var(--shinobu-ink) !important;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--shinobu-mint-soft) 96%, transparent), color-mix(in srgb, var(--shinobu-mint) 42%, var(--shinobu-cream))) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--shinobu-mint-soft) 78%, transparent), color-mix(in srgb, var(--shinobu-mint) 34%, transparent)) !important;
   border: 1px solid color-mix(in srgb, var(--shinobu-mint) 55%, transparent) !important;
   border-radius: 16px !important;
   box-shadow: 0 8px 18px #6d765227 !important;
+  backdrop-filter: blur(16px) saturate(1.06);
 }
 
 html[data-shinobu-theme="active"] [data-local-conversation-final-assistant] {
@@ -234,9 +250,9 @@ html[data-shinobu-theme="active"] [data-local-conversation-final-assistant] {
   color: var(--shinobu-ink) !important;
   border: 1px solid color-mix(in srgb, var(--shinobu-mint) 42%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--shinobu-cream) 86%, transparent);
+  background: color-mix(in srgb, var(--shinobu-cream) 72%, transparent);
   box-shadow: 0 10px 22px #6d765229;
-  backdrop-filter: blur(14px) saturate(1.06);
+  backdrop-filter: blur(18px) saturate(1.06);
 }
 
 html[data-shinobu-theme="active"] [data-codex-approval-surface],
@@ -312,9 +328,11 @@ html[data-shinobu-theme="active"] .startup-loader__base {
 }
 
 @media (max-width: 799px) {
-  html[data-shinobu-theme="active"] .app-header-tint {
-    width: var(--shinobu-primary-rail-inline-size, calc(100% - 32px)) !important;
-    margin-left: var(--shinobu-primary-rail-inline-start, 16px) !important;
+  html[data-shinobu-theme="active"] .app-header-tint[data-shinobu-thread-header="true"],
+  html[data-shinobu-theme="active"] .app-header-tint:has([data-thread-title]) {
+    width: min(var(--shinobu-primary-rail-inline-size, calc(100% - 32px)), calc(100% - 32px)) !important;
+    max-width: calc(100% - 32px) !important;
+    margin: 8px 16px 6px auto !important;
   }
 
   html[data-shinobu-theme="active"] .thread-scroll-container [data-mcp-app-portal-target="true"],

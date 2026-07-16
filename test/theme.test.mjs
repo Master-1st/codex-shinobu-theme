@@ -206,10 +206,10 @@ test("renderer layout tracking applies and removes an overlay-sidebar offset", a
     log: { info() {}, warn() {}, error() {} },
   });
 
-  assert.equal(rootAttributes.get("data-shinobu-layout"), "rail");
-  assert.equal(threadAttributes.get("data-shinobu-rail-mode"), "rail");
-  assert.equal(threadStyle.values.get("--shinobu-rail-inline-start"), "208.00px");
-  assert.equal(threadStyle.values.get("--shinobu-rail-inline-size"), "745.28px");
+  assert.equal(rootAttributes.get("data-shinobu-layout"), "centered");
+  assert.equal(threadAttributes.get("data-shinobu-rail-mode"), "centered");
+  assert.equal(threadStyle.values.get("--shinobu-rail-inline-start"), "570.50px");
+  assert.equal(threadStyle.values.get("--shinobu-rail-inline-size"), "860.00px");
   assert.ok(observed.includes(rootElement));
   assert.ok(observed.includes(sidebar));
   assert.ok(observed.includes(thread));
@@ -242,7 +242,7 @@ test("automatic palette produces distinct colors with readable text", async () =
   assert.ok(module.exports.__test.contrastRatio(palette.muted, palette.surface) >= 4.5);
 });
 
-test("reading rail stays outside an overlay sidebar when the window is restored", async () => {
+test("reading rail centers inside the visible workspace when the window is restored", async () => {
   const source = await readFile(new URL("../dist/index.js", import.meta.url), "utf8");
   const module = { exports: {} };
   vm.runInNewContext(source, { module, exports: module.exports, console });
@@ -253,20 +253,20 @@ test("reading rail stays outside an overlay sidebar when the window is restored"
     threadRight: 1963,
     sidebarRight: 330,
   });
-  assert.equal(restored.mode, "rail");
+  assert.equal(restored.mode, "centered");
   assert.ok(restored.absoluteLeft >= 354, "reading rail must start after the visible sidebar");
-  assert.ok(restored.absoluteRight <= 1963 * 0.56 + 0.01, "reading rail must end before the character safe area");
-  assert.ok(restored.width >= 700, "restored window should retain a useful reading width");
+  assert.equal(restored.width, 860, "restored window should use the centered maximum reading width");
+  assert.ok(Math.abs((restored.absoluteLeft + restored.absoluteRight) / 2 - (354 + 1939) / 2) < 0.01, "reading rail must be centered in the visible work area");
 
   const compact = module.exports.__test.calculateReadingRail({
-    viewportWidth: 900,
-    threadLeft: 110,
-    threadRight: 900,
+    viewportWidth: 640,
+    threadLeft: 80,
+    threadRight: 640,
     sidebarRight: 270,
   });
   assert.equal(compact.mode, "compact");
   assert.ok(compact.absoluteLeft >= 286, "compact content must still stay outside the sidebar");
-  assert.ok(compact.absoluteRight <= 884, "compact content must remain inside the work area");
+  assert.ok(compact.absoluteRight <= 624, "compact content must remain inside the work area");
 });
 
 test("stored artwork palette applies and is fully removed on stop", async () => {
@@ -545,7 +545,8 @@ test("theme CSS scopes stable Codex surfaces and responsive fallbacks", async ()
   assert.match(css, /data-mcp-app-portal-target="true"/);
   assert.match(css, /data-pip-obstacle="thread-footer"/);
   assert.doesNotMatch(css, /radial-gradient\(circle, #fff 0 1px/);
-  assert.match(css, /\.app-header-tint[\s\S]*width: min\(860px/);
+  assert.match(css, /\.app-header-tint[\s\S]*width: 100%/);
+  assert.match(css, /app-header-tint:has\(\[data-thread-title\]\)[\s\S]*margin: 8px 24px 6px auto/);
   assert.match(css, /--shinobu-rail-inline-start/);
   assert.match(css, /--shinobu-rail-inline-size/);
   assert.match(css, /data-shinobu-layout="compact"/);
@@ -563,6 +564,7 @@ test("visual QA preview contains every supported state", async () => {
   assert.match(preview, /data-codex-approval-surface/);
   assert.match(preview, /role="dialog"/);
   assert.match(preview, /data-preview-detail-composer="true"/);
+  assert.match(preview, /window-toolbar app-header-tint/);
   assert.match(preview, /body\[data-state="settings"\] \.workspace \{ display: none; \}/);
   assert.match(preview, /grid-template-rows: minmax\(0, 1fr\) auto/);
 });

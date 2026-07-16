@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2 — 2026-07-16
+
+- Restores the application menu/title chrome to a full-width translucent bar.
+- Right-aligns the task title glass bar while centering conversations and the composer in the visible workspace.
+- Keeps centered content outside an overlay sidebar, but allows tasteful overlap with the character artwork.
+- Reduces reply, user bubble, composer, and task-header opacity for a softer glass effect.
+
 ## 1.1.1 — 2026-07-16
 
 - Fixes restored/smaller Codex windows where the expanded sidebar overlays the work area and clips the left side of replies.

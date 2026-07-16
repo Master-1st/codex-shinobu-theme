@@ -9,7 +9,9 @@
       html, body { overflow: hidden; }
       body { font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif; }
       button, textarea, select { font: inherit; }
-      .preview-shell { display: grid; grid-template-columns: 270px 1fr; height: 100vh; padding: 12px 12px 0; gap: 10px; }
+      #root { display: grid; grid-template-rows: 52px minmax(0, 1fr); }
+      .app-header-tint.window-toolbar { display: flex; align-items: center; justify-content: flex-start; gap: 24px; }
+      .preview-shell { display: grid; grid-template-columns: 270px 1fr; min-height: 0; padding: 12px 12px 0; gap: 10px; }
       .app-shell-left-panel { min-width: 0; padding: 18px 12px; border-radius: 18px 18px 0 0; overflow: hidden; }
       .brand { display: flex; align-items: center; gap: 10px; margin: 4px 8px 24px; font-weight: 750; }
       .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border: 7px solid var(--shinobu-mint); border-radius: 50%; }
@@ -91,6 +93,7 @@
   </head>
   <body data-state="normal">
     <div id="root">
+      <div class="window-toolbar app-header-tint"><span>←</span><span>文件</span><span>编辑</span><span>视图</span><span>帮助</span></div>
       <div class="preview-shell">
         <aside class="app-shell-left-panel">
           <div class="brand"><span class="brand-mark"></span><span>Codex</span></div>
@@ -186,17 +189,18 @@ theme.verify(["normal", "split", "dialog"]);</code></pre>
         }
         const sidebarRight = sidebarRect.width >= 40 ? Math.min(viewportWidth, sidebarRect.right) : 0;
         const safeStart = Math.max(threadRect.left + 24, sidebarRight + 24);
-        const safeRight = Math.min(threadRect.right - 24, viewportWidth * 0.56);
+        const safeRight = Math.max(safeStart, threadRect.right - 24);
         const safeWidth = safeRight - safeStart;
         const compact = safeWidth < 360;
         const start = compact ? Math.max(threadRect.left + 16, sidebarRight + 16) : safeStart;
         const right = compact ? Math.max(start, threadRect.right - 16) : safeRight;
         const width = compact ? right - start : Math.min(860, safeWidth);
-        thread.style.setProperty("--shinobu-rail-inline-start", `${Math.max(compact ? 16 : 24, start - threadRect.left)}px`);
+        const centeredStart = compact ? start : start + Math.max(0, (safeWidth - width) / 2);
+        thread.style.setProperty("--shinobu-rail-inline-start", `${Math.max(compact ? 16 : 24, centeredStart - threadRect.left)}px`);
         thread.style.setProperty("--shinobu-rail-inline-size", `${Math.max(0, width)}px`);
-        thread.dataset.shinobuRailMode = compact ? "compact" : "rail";
-        root.dataset.shinobuLayout = compact ? "compact" : "rail";
-        root.style.setProperty("--shinobu-primary-rail-inline-start", `${Math.max(compact ? 16 : 24, start - threadRect.left)}px`);
+        thread.dataset.shinobuRailMode = compact ? "compact" : "centered";
+        root.dataset.shinobuLayout = compact ? "compact" : "centered";
+        root.style.setProperty("--shinobu-primary-rail-inline-start", `${Math.max(compact ? 16 : 24, centeredStart - threadRect.left)}px`);
         root.style.setProperty("--shinobu-primary-rail-inline-size", `${Math.max(0, width)}px`);
       };
       calculatePreviewRail();
